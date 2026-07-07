@@ -13,6 +13,7 @@ TEMPLATE_FILES = [
     "AGENT_GUIDE.md",
     "STYLE_GUIDE.md",
     "DECISIONS.md",
+    "LIFECYCLE.md",
     "FILE_MAP.md",
     "DATA_GUIDE.md",
     "TESTING_GUIDE.md",

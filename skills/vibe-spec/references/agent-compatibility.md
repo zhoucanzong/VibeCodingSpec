@@ -1,40 +1,40 @@
-# Agent Compatibility
+# 跨 Agent 兼容
 
-Use these rules when the same project may be maintained by Claude, Codex, Cursor, or other coding agents.
+当同一项目可能被 Claude、Codex、Cursor 或 IDE Agent 维护时，使用这些规则。
 
-## Portable Instructions
+## 可移植指令
 
-- Put durable project facts in `.vibe-spec/`, not in tool-specific memory.
-- Prefer plain Markdown files over hidden configuration formats.
-- Keep commands understandable as both slash commands and natural language.
-- Treat frontmatter as helpful metadata, but never make critical behavior depend only on one tool's parser.
-- Record assumptions in specs when an agent proceeds without asking the user.
+- 把长期事实写入 `.vibe-spec/`，不要依赖某个工具的隐藏记忆。
+- 优先使用 Markdown，而不是只有某个工具能解析的隐藏配置。
+- 命令既要能被 slash command 理解，也要能被自然语言触发。
+- frontmatter 可以作为工具提示，但关键行为必须写在正文。
+- Agent 在不询问用户的情况下做出的假设，要写入 spec 或实现记录。
 
-## Claude-Friendly Conventions
+## Claude 友好约定
 
-- Keep `argument-hint` short and command-like.
-- Use `allowed-tools` as an affordance for Claude-style skill runners.
-- Write command routes explicitly, such as `/vibe-spec build <spec-id>`.
+- `argument-hint` 保持简短、命令式。
+- `allowed-tools` 作为 Claude 风格 skill runner 的提示。
+- 明确写出 `/vibe-spec build <spec-id>` 这类路由。
 
-## Codex-Friendly Conventions
+## Codex 友好约定
 
-- Put trigger conditions in the `description` field.
-- Put all required behavior in the Markdown body.
-- Do not require slash command syntax; support natural-language equivalents.
-- Prefer repository files and explicit verification evidence over conversation memory.
+- 触发条件写进 `description`。
+- 必须遵守的行为写进 Markdown 正文。
+- 不要求用户必须使用 slash command。
+- 以仓库文件和验证证据为准，不依赖对话记忆。
 
-## Cursor And IDE Agents
+## Cursor 与 IDE Agent
 
-- Keep `.vibe-spec/AGENT_GUIDE.md` as the first file for handoff.
-- Link specs to changed code paths in implementation notes.
-- Keep `SPEC_INDEX.md` current so agents can discover the active work without scanning every file.
+- 把 `.vibe-spec/AGENT_GUIDE.md` 作为接手入口。
+- 在实现记录中把 spec 关联到具体代码路径。
+- 保持 `SPEC_INDEX.md` 最新，让 Agent 不必扫描所有文件也能找到当前工作。
 
-## Handoff Discipline
+## 交接纪律
 
-Every agent should leave the next agent with:
+每个 Agent 离开前应留下：
 
-- Current spec state.
-- Changed files.
-- Verification commands and results.
-- Known risks or skipped checks.
-- Follow-up tasks if work is not fully reviewed.
+- 当前 spec 状态。
+- 修改过的文件。
+- 验证命令和结果。
+- 已知风险或跳过的检查。
+- 未完成工作时的下一步。

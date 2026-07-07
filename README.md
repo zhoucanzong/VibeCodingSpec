@@ -1,37 +1,38 @@
 # Vibe Spec
 
-Cross-agent spec-driven development workflow for Claude, Codex, Cursor, and similar coding agents.
+面向 Claude、Codex、Cursor 等 coding agent 的跨工具规格驱动开发工作流。
 
-`vibe-spec` helps a project keep product intent, implementation work, spec inheritance, and review evidence synchronized across different coding tools.
+`vibe-spec` 把项目意图、spec 继承、生命周期、实现记录、实验数据、测试验证和审核结果沉淀到仓库里，让不同 Agent 可以按同一套规则接手和维护项目。
 
-## What It Does
+## 它解决什么
 
-- Initializes a project-level `.vibe-spec/` workspace.
-- Turns feature ideas into maintainable specs.
-- Supports spec inheritance, overrides, supersession, and sync states.
-- Guides agents to implement from specs instead of hidden assumptions.
-- Reviews completed work against acceptance criteria.
-- Audits spec/code drift across a repository.
-- Maintains a file map so agents know what important files and directories do.
-- Standardizes experiment logs, data locations, fixtures, and verification scripts.
+- 初始化项目级 `.vibe-spec/` 工作区。
+- 将需求转成可实现、可审核、可继承的 spec。
+- 维护 spec 生命周期：`draft`、`approved`、`implemented`、`verified`、`reviewed`、`active`、`deprecated` 等。
+- 支持 spec 继承、override、supersession、sync 和 retire。
+- 指导 Agent 按 spec 实现，而不是靠隐式记忆。
+- 审核实现是否满足 acceptance criteria。
+- 审计 spec/code drift。
+- 维护文件地图，让 Agent 知道重要文件和目录是什么。
+- 规范实验记录、数据位置、fixtures、测试命令和验证脚本。
 
-## Install
+## 安装
 
-Ask your coding agent to install this skill from the repository:
+让你的 coding agent 安装这个 skill：
 
 ```text
-Install this skill: git@github.com:zhoucanzong/VibeCodingSpec.git
+安装这个 skill：git@github.com:zhoucanzong/VibeCodingSpec.git
 ```
 
-The skill lives at:
+Skill 入口：
 
 ```text
 skills/vibe-spec/SKILL.md
 ```
 
-## Usage
+## 用法
 
-Claude-style slash command examples:
+Claude 风格 slash command：
 
 ```text
 /vibe-spec init
@@ -39,23 +40,27 @@ Claude-style slash command examples:
 /vibe-spec build passwordless-login
 /vibe-spec review passwordless-login
 /vibe-spec update passwordless-login
+/vibe-spec lifecycle passwordless-login
+/vibe-spec promote passwordless-login verified
+/vibe-spec sync passwordless-login
+/vibe-spec retire passwordless-login
 /vibe-spec experiment login-benchmark
 /vibe-spec audit
 /vibe-spec status
 ```
 
-Natural language examples for Codex or other agents:
+Codex 或其他 Agent 的自然语言调用：
 
 ```text
-Use vibe-spec to initialize this repo.
-Use vibe-spec to write a spec for passwordless login.
-Use vibe-spec to implement the approved passwordless-login spec.
-Use vibe-spec to audit this project for spec drift.
+使用 vibe-spec 初始化这个仓库。
+使用 vibe-spec 为 passwordless login 写一个 spec。
+使用 vibe-spec 实现已批准的 passwordless-login spec。
+使用 vibe-spec 检查这个项目有没有 spec drift。
 ```
 
-## Project Workspace
+## 项目工作区
 
-When initialized in a target project, `vibe-spec` uses:
+在目标项目里初始化后，`vibe-spec` 使用：
 
 ```text
 .vibe-spec/
@@ -63,6 +68,7 @@ When initialized in a target project, `vibe-spec` uses:
   AGENT_GUIDE.md
   STYLE_GUIDE.md
   DECISIONS.md
+  LIFECYCLE.md
   FILE_MAP.md
   DATA_GUIDE.md
   TESTING_GUIDE.md
@@ -73,9 +79,9 @@ When initialized in a target project, `vibe-spec` uses:
   scripts/
 ```
 
-These files are the handoff layer between agents. Claude, Codex, Cursor, and future tools should read them before changing code.
+这些文件是 Agent 之间的交接层。Claude、Codex、Cursor 和后续工具都应先读它们，再改代码。
 
-## Skill Structure
+## Skill 结构
 
 ```text
 skills/
@@ -84,34 +90,38 @@ skills/
     assets/
       templates/
         AGENT_GUIDE.md
-        DECISIONS.md
+        AUDIT_REPORT.md
         DATA_GUIDE.md
+        DECISIONS.md
         EXPERIMENTS.md
         FEATURE_SPEC.md
         FILE_MAP.md
+        LIFECYCLE.md
         PROJECT_SPEC.md
         REVIEW_REPORT.md
-        AUDIT_REPORT.md
         SPEC_INDEX.md
         STYLE_GUIDE.md
         TESTING_GUIDE.md
     references/
       agent-compatibility.md
       lifecycle.md
+      lifecycle-governance.md
       review-checklist.md
       spec-drift.md
+      vibe-coding-field-notes.md
     scripts/
       init_vibe_spec.py
 ```
 
-## Core Idea
+## 核心思想
 
-Specs should not be one-off planning artifacts. They should evolve with the project:
+Spec 不应该是一次性计划，而应该是项目长期资产：
 
-- A spec can inherit from project-level rules or parent specs.
-- A spec can add behavior or explicitly override inherited behavior.
-- Implementation notes record what changed and why.
-- Reviews record whether acceptance criteria were actually satisfied.
-- Audits catch drift when code and specs diverge.
-- Experiments record inputs, commands, metrics, artifacts, and decision impact.
-- Data and testing guides make verification reproducible across tools.
+- Spec 可以继承项目级规则或父 spec。
+- Spec 可以新增行为，也可以显式 override 继承行为。
+- 生命周期日志记录状态如何变化、为什么变化、证据是什么。
+- 实现记录说明改了什么和为什么。
+- Review 记录验收标准是否真的满足。
+- Audit 捕捉代码和 spec 的漂移。
+- Experiments 记录输入、命令、指标、产物和决策影响。
+- Data 和 Testing guide 让验证可以被不同工具复现。

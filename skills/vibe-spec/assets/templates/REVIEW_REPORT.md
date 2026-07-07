@@ -1,34 +1,34 @@
-# Review Report
+# Review 报告
 
-## Verdict
+## 结论
 
 Pass | Pass with Notes | Needs Work | Blocked
 
 ## Spec
 
 - Spec ID: TBD
-- File: TBD
-- Status Before Review: TBD
-- Status After Review: TBD
+- 文件: TBD
+- Review 前状态: TBD
+- Review 后状态: TBD
 
-## Acceptance Checklist
+## 验收清单
 
 - [ ] TBD
 
-## Findings
+## 问题
 
-| Severity | Issue | Evidence | Required Fix |
+| 优先级 | 问题 | 证据 | 必须修复 |
 |---|---|---|---|
 | TBD | TBD | TBD | TBD |
 
-## Verification Evidence
+## 验证证据
 
 - TBD
 
-## Spec Drift
+## Spec Drift 检查
 
 - TBD
 
-## Follow-ups
+## 后续动作
 
 - TBD

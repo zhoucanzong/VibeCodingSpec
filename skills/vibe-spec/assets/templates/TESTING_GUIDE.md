@@ -1,42 +1,42 @@
-# Testing Guide
+# 测试指南
 
-Use this file to make verification reproducible across agents.
+用于让不同 Agent 能复现验证过程。
 
-## Standard Commands
+## 标准命令
 
-| Purpose | Command | When To Run | Notes |
+| 目的 | 命令 | 何时运行 | 备注 |
 |---|---|---|---|
-| Install dependencies | TBD | Fresh checkout | TBD |
-| Unit tests | TBD | Logic changes | TBD |
-| Integration tests | TBD | API/data changes | TBD |
-| Lint | TBD | Before review | TBD |
-| Build | TBD | Before marking implemented | TBD |
+| 安装依赖 | TBD | 新 checkout | TBD |
+| 单元测试 | TBD | 逻辑变更 | TBD |
+| 集成测试 | TBD | API/数据变更 | TBD |
+| Lint | TBD | review 前 | TBD |
+| Build | TBD | 标记 implemented 前 | TBD |
 
-## Test Scripts
+## 测试脚本
 
-Project-local test or verification scripts should live in one of:
+项目本地测试或验证脚本应放在：
 
-- Existing project test/script directories.
-- `.vibe-spec/scripts/` for spec workflow helpers that do not belong to product code.
+- 既有项目 test/script 目录。
+- `.vibe-spec/scripts/`，仅用于不属于产品代码的 spec 工作流辅助脚本。
 
-Every script should document:
+每个脚本应记录：
 
-- Purpose.
-- Inputs.
-- Outputs.
-- Required environment variables.
-- Example command.
+- 用途。
+- 输入。
+- 输出。
+- 必需环境变量。
+- 示例命令。
 
 ## Fixtures
 
-| Path | Purpose | Related Spec | Notes |
+| 路径 | 用途 | 关联 Spec | 备注 |
 |---|---|---|---|
 | TBD | TBD | TBD | TBD |
 
-## Manual Verification
+## 手动验证
 
-Use manual verification only when automated coverage is unavailable or insufficient. Record exact steps, expected result, actual result, and environment.
+只有自动化覆盖不足时使用手动验证。记录具体步骤、预期结果、实际结果和环境。
 
-## Visual Verification
+## 视觉验证
 
-For UI work, record viewport, browser, route, screenshots if available, and any known visual risk.
+UI 工作记录 viewport、浏览器、路由、截图位置，以及已知视觉风险。

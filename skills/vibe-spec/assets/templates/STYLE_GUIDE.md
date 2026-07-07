@@ -1,30 +1,30 @@
-# Style Guide
+# 风格指南
 
-## Engineering Style
+## 工程风格
 
-- Prefer existing project patterns and local helpers.
-- Keep changes small and directly tied to the active spec.
-- Avoid unrelated refactors.
-- Add abstractions only when they reduce real duplication or match an established pattern.
-- Do not introduce dependencies without a clear reason.
+- 优先复用现有项目模式和本地 helper。
+- 改动保持小而完整，直接服务当前 spec。
+- 避免无关重构。
+- 只有在减少真实重复或符合既有模式时才新增抽象。
+- 没有明确理由不要新增依赖。
 
-## Frontend Style
+## 前端风格
 
-- Build the usable product surface, not a marketing placeholder.
-- Match existing design systems and component conventions.
-- Include important states: loading, empty, error, success, disabled.
-- Keep interfaces clear, scannable, and responsive.
-- Avoid decorative UI that does not help the workflow.
+- 构建可用的产品界面，不做空壳页面。
+- 匹配已有设计系统和组件约定。
+- 覆盖关键状态：loading、empty、error、success、disabled。
+- 界面应清晰、可扫描、响应式可用。
+- 避免不服务工作流的装饰性 UI。
 
-## Backend Style
+## 后端风格
 
-- Validate inputs at boundaries.
-- Preserve authorization and privacy assumptions.
-- Handle errors explicitly.
-- Prefer idempotent operations for retryable workflows.
-- Record important API or data model decisions in `DECISIONS.md`.
+- 在边界处校验输入。
+- 保留权限、隐私和数据安全假设。
+- 显式处理错误路径。
+- 可重试流程优先保证幂等。
+- 重要 API 或数据模型决策写入 `DECISIONS.md`。
 
-## Naming
+## 命名
 
-- Use existing naming conventions in the repository.
-- Prefer clear domain names over generic helper names.
+- 遵循仓库现有命名约定。
+- 优先使用清晰的领域命名，少用含糊的 helper 名。

@@ -1,38 +1,38 @@
-# Data Guide
+# 数据指南
 
-Use this file to keep data storage, privacy, fixtures, and experiment inputs reproducible.
+用于让数据存放、隐私规则、fixtures 和实验输入可复现。
 
-## Data Locations
+## 数据位置
 
-| Path | Kind | Source | Used By | Commit? | Notes |
+| 路径 | 类型 | 来源 | 使用方 | 是否提交 | 备注 |
 |---|---|---|---|---|---|
 | TBD | raw / derived / fixture / export | TBD | TBD | yes/no | TBD |
 
-## Data Rules
+## 数据规则
 
-- Keep raw data separate from derived data.
-- Do not commit secrets, credentials, private user data, or large generated artifacts unless explicitly approved.
-- Record source, generation command, timestamp, and schema for derived datasets.
-- Prefer small deterministic fixtures for tests.
-- Document cleanup and retention rules for generated data.
+- raw data 与 derived data 分开存放。
+- 不提交 secrets、credentials、私有用户数据或大型生成产物，除非用户明确批准。
+- derived datasets 要记录来源、生成命令、时间戳和 schema。
+- 测试优先使用小型、确定性的 fixtures。
+- 记录生成数据的清理和保留规则。
 
-## Schemas
+## Schema
 
-| Dataset/File | Schema/Fields | Validation | Notes |
+| 数据集/文件 | 字段 | 校验方式 | 备注 |
 |---|---|---|---|
 | TBD | TBD | TBD | TBD |
 
-## Privacy And Sensitivity
+## 隐私与敏感性
 
-- Sensitive data classes: TBD
-- Redaction/anonymization rules: TBD
-- Storage restrictions: TBD
+- 敏感数据类型：TBD
+- 脱敏/匿名化规则：TBD
+- 存储限制：TBD
 
-## Reproducibility
+## 可复现性
 
-For any dataset used in experiments or tests, record:
+任何用于实验或测试的数据集都要记录：
 
-- Source path or URL.
-- Version, hash, or timestamp.
-- Transformation script or command.
-- Expected output location.
+- 来源路径或 URL。
+- 版本、hash 或时间戳。
+- 转换脚本或命令。
+- 预期输出位置。

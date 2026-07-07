@@ -9,7 +9,7 @@ updated: YYYY-MM-DD
 owner_agent: unspecified
 ---
 
-# Spec: Human Title
+# Spec: 标题
 
 ## Summary
 
@@ -49,7 +49,7 @@ TBD
 
 ## Implementation Notes
 
-No implementation yet.
+尚未实现。
 
 ## Verification Plan
 
@@ -57,8 +57,14 @@ No implementation yet.
 
 ## Review Notes
 
-No review yet.
+尚未审核。
+
+## Lifecycle Log
+
+| 日期 | From | To | Actor | 原因 | 证据 |
+|---|---|---|---|---|---|
+| YYYY-MM-DD | none | draft | unspecified | 创建 spec | 本文件 |
 
 ## Changelog
 
-- YYYY-MM-DD: Created.
+- YYYY-MM-DD: 创建 spec。

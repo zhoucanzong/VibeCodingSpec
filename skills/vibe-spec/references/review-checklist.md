@@ -1,77 +1,76 @@
-# Review Checklist
+# Review 清单
 
-Use this checklist for `/vibe-spec review <spec-id>`.
+用于 `/vibe-spec review <spec-id>`。
 
-## Verdicts
+## 结论值
 
-- `Pass`: implementation satisfies the spec and verification is adequate.
-- `Pass with Notes`: acceptable, with non-blocking follow-ups.
-- `Needs Work`: required fixes remain.
-- `Blocked`: cannot reach a verdict due to missing access, missing data, or unclear requirements.
+- `Pass`: 实现满足 spec，验证证据充分。
+- `Pass with Notes`: 可以接受，但有非阻塞后续项。
+- `Needs Work`: 仍有必须修复项。
+- `Blocked`: 缺少权限、数据或需求信息，无法得出结论。
 
-## Acceptance
+## 验收标准
 
-- Every acceptance criterion is checked.
-- Each checked criterion has evidence.
-- Unchecked criteria are explained.
-- Criteria added during implementation are reflected in the spec.
+- 每条 Acceptance Criteria 都被检查。
+- 每条通过项都有证据。
+- 未检查项说明原因。
+- 实现中新增的标准已同步回 spec。
 
-## Inheritance
+## 继承关系
 
-- Parent specs still apply.
-- Overrides are explicit.
-- No inherited behavior was silently removed.
-- Child specs are marked `needs_sync` if parent behavior changed.
+- 父 spec 约束仍然适用。
+- Overrides 明确。
+- 没有静默删除继承行为。
+- 父行为变化时，子 spec 已标记 `needs_sync`。
 
-## Code Quality
+## 代码质量
 
-- Implementation follows existing project patterns.
-- No unrelated refactors are mixed in.
-- New abstractions have a clear reason.
-- Error, loading, empty, and edge states are handled where relevant.
-- Inputs and permissions are handled at appropriate boundaries.
+- 实现遵循现有项目模式。
+- 没混入无关重构。
+- 新抽象有明确理由。
+- 相关场景覆盖 error、loading、empty、edge states。
+- 输入校验和权限边界处理在合适位置。
 
-## Verification
+## 验证证据
 
-- Existing tests were run when available.
-- Build or lint checks were run when relevant.
-- Manual verification steps are specific enough to reproduce.
-- Screenshots or browser checks are included for visual UI work when feasible.
-- Skipped checks include a reason and residual risk.
+- 可用时运行已有测试。
+- 相关时运行 build 或 lint。
+- 手动验证步骤足够具体，可复现。
+- UI 工作尽量保留截图或浏览器检查记录。
+- 跳过的检查说明原因和风险。
 
-## Documentation Sync
+## 文档同步
 
-- Implementation notes list changed files and rationale.
-- New decisions are recorded in `DECISIONS.md`.
-- `SPEC_INDEX.md` has current status and next action.
-- Superseded or deprecated specs are marked consistently.
+- Implementation Notes 列出改动文件和理由。
+- 新决策写入 `DECISIONS.md`。
+- `SPEC_INDEX.md` 状态和下一步最新。
+- Superseded 或 deprecated spec 标记一致。
+- `FILE_MAP.md`、`DATA_GUIDE.md`、`TESTING_GUIDE.md`、`EXPERIMENTS.md` 已按需更新。
 
-## Review Output
-
-Write review notes in this shape:
+## Review 输出格式
 
 ```markdown
 ## Review Notes
 
-### Verdict
+### 结论
 
 Pass | Pass with Notes | Needs Work | Blocked
 
-### Acceptance Checklist
+### 验收清单
 
 - [x] Criterion - evidence
 - [ ] Criterion - required fix
 
-### Findings
+### 问题
 
 | Severity | Issue | Evidence | Required Fix |
 |---|---|---|---|
 
-### Verification Evidence
+### 验证证据
 
 - Command or manual check: result
 
-### Follow-ups
+### 后续动作
 
 - Non-blocking item
 ```

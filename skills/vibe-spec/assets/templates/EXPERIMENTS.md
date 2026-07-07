@@ -1,58 +1,58 @@
-# Experiments
+# 实验记录
 
-Use this file to preserve experiment history, benchmark runs, prompt trials, model evaluations, data checks, and performance investigations.
+用于记录 benchmark、模型评估、prompt 试验、数据检查、性能测试和探索性对比，保证后续 Agent 可以复现。
 
-## Experiment Log
+## 实验日志
 
-| Date | ID | Hypothesis | Input/Data | Command/Method | Metrics | Result | Follow-up |
+| 日期 | 实验 ID | 假设 | 输入/数据 | 命令/方法 | 指标 | 结果 | 后续动作 |
 |---|---|---|---|---|---|---|---|
 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
-## Experiment Template
+## 实验模板
 
 ````markdown
 ## YYYY-MM-DD-short-experiment-id
 
-### Hypothesis
+### 假设
 
 TBD
 
-### Context
+### 背景
 
 TBD
 
-### Inputs
+### 输入
 
-- Data/fixtures:
+- 数据/fixtures:
 - Spec:
 - Code version:
 - Environment:
 
-### Method
+### 方法
 
 ```text
 command or procedure
-````
+```
 
-### Metrics
+### 指标
 
 - TBD
 
-### Results
+### 结果
 
 TBD
 
-### Artifacts
+### 产物
 
 - TBD
 
-### Decision Impact
+### 对决策的影响
 
 - Spec changes:
 - Decision log changes:
 - Implementation changes:
 
-### Follow-ups
+### 后续动作
 
 - TBD
-```
+````

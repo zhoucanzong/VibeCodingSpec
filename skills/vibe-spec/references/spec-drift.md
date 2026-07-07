@@ -1,74 +1,78 @@
-# Spec Drift Audit
+# Spec Drift 审计
 
-Use this guide for `/vibe-spec audit`.
+用于 `/vibe-spec audit`。
 
-## Drift Types
+## Drift 类型
 
-### Missing Implementation
+### Missing Implementation：缺少实现
 
-A spec is `approved` or `in_progress`, but no implementation notes or matching code changes exist.
+Spec 是 `approved` 或 `in_progress`，但没有实现记录或对应代码变化。
 
-### Missing Review
+### Missing Review：缺少审核
 
-A spec is `implemented`, but review notes are empty or no verdict exists.
+Spec 是 `implemented` 或 `verified`，但没有 review 结论。
 
-### Untracked Behavior
+### Untracked Behavior：未记录行为
 
-Code contains meaningful product behavior with no related spec entry.
+代码中存在重要产品行为，但没有相关 spec。
 
-### Stale Acceptance
+### Stale Acceptance：验收标准过期
 
-Acceptance criteria describe behavior that no longer matches code.
+Acceptance Criteria 描述的行为已经与代码不一致。
 
-### Inheritance Drift
+### Inheritance Drift：继承漂移
 
-A parent spec changed but child specs were not reviewed or marked `needs_sync`.
+父 spec 改了，但子 spec 没有 review 或标记 `needs_sync`。
 
-### Decision Drift
+### Decision Drift：决策漂移
 
-Code or specs contradict `DECISIONS.md`.
+代码或 spec 与 `DECISIONS.md` 冲突。
 
-### Style Drift
+### Style Drift：风格漂移
 
-Implementation repeatedly violates `STYLE_GUIDE.md` or established code patterns.
+实现反复违反 `STYLE_GUIDE.md` 或既有代码模式。
 
-## Audit Method
+### Memory Drift：项目记忆漂移
 
-1. Read `.vibe-spec/SPEC_INDEX.md`.
-2. Scan `.vibe-spec/specs/` for states, parents, supersession, and review notes.
-3. Inspect recent git history when available.
-4. Search code for features named in specs.
-5. Search specs for code paths mentioned in implementation notes.
-6. Compare decisions and style rules against recent changes.
-7. Report actionable findings.
+`FILE_MAP.md`、`DATA_GUIDE.md`、`TESTING_GUIDE.md` 或 `EXPERIMENTS.md` 与真实项目状态不一致。
 
-## Severity
+## 审计方法
 
-- `P0`: shipped behavior violates a critical spec, security, privacy, data, or payment rule.
-- `P1`: active feature behavior conflicts with acceptance criteria.
-- `P2`: spec state, review evidence, or implementation notes are stale.
-- `P3`: documentation hygiene issue with low immediate risk.
+1. 读取 `.vibe-spec/SPEC_INDEX.md`。
+2. 扫描 `.vibe-spec/specs/` 的状态、父子关系、supersession 和 review notes。
+3. 有 git 历史时检查近期变更。
+4. 在代码中搜索 spec 里提到的功能。
+5. 在 spec 中搜索 implementation notes 提到的代码路径。
+6. 对比 `DECISIONS.md`、`STYLE_GUIDE.md`、`DATA_GUIDE.md`、`TESTING_GUIDE.md` 和近期改动。
+7. 报告可行动问题。
 
-## Audit Output
+## 优先级
+
+- `P0`: 已发布行为违反关键 spec、安全、隐私、数据或支付规则。
+- `P1`: active 功能行为与验收标准冲突。
+- `P2`: spec 状态、review 证据、实现记录或项目记忆过期。
+- `P3`: 低风险文档卫生问题。
+
+## 审计输出
 
 ```markdown
 # Vibe Spec Audit
 
-## Verdict
+## 结论
 
 Healthy | Drift Found | Blocked
 
-## Findings
+## 发现
 
 | Severity | Type | Spec/File | Evidence | Action |
 |---|---|---|---|---|
 
-## State Summary
+## 状态汇总
 
 | State | Count |
 |---|---:|
 
-## Recommended Next Actions
+## 建议下一步
 
 - ...
 ```

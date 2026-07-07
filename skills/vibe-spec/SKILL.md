@@ -1,129 +1,144 @@
 ---
 name: vibe-spec
-description: Cross-agent spec-driven development workflow for maintaining projects with Claude, Codex, Cursor, and similar coding agents. Use when the user wants to initialize project specs, turn a feature idea into a maintainable specification, implement from a spec, inherit or update existing specs, review completed work against acceptance criteria, audit spec/code drift, document file purposes, standardize data storage, maintain testing scripts, record experiments, or keep multiple agents aligned on project style and decisions.
-argument-hint: <request> or init or spec <request> or build <spec-id> or review <spec-id> or update <spec-id> or experiment <topic> or audit or status
+description: 跨 Agent 的规格驱动开发工作流。用于初始化项目规格、编写和继承 spec、维护 spec 生命周期、按 spec 实现、记录实验、规范数据存放和测试脚本、维护文件地图、审核实现结果、检查 spec/code drift，并帮助 Claude、Codex、Cursor 等工具按统一项目风格协作。
+argument-hint: <需求> 或 init 或 spec <需求> 或 build <spec-id> 或 review <spec-id> 或 update <spec-id> 或 lifecycle <spec-id> 或 promote <spec-id> <state> 或 sync <spec-id> 或 retire <spec-id> 或 experiment <主题> 或 audit 或 status
 allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFetch]
 ---
 
 # Vibe Spec
 
-> One line: keep coding agents aligned by making project intent, implementation work, inheritance, and review explicit.
+> 一句话：把项目意图、规格继承、实现记录、生命周期、实验数据、测试验证和审核结果变成可维护的跨 Agent 协作协议。
 
-User input: `$ARGUMENTS`
+用户输入：`$ARGUMENTS`
 
-## Command Routing
+## 命令路由
 
-If invoked as a slash command:
+如果以 slash command 调用：
 
-| Command | Purpose | Default output |
+| 命令 | 作用 | 默认产物 |
 |---|---|---|
-| `/vibe-spec init` | Create the project spec workspace | `.vibe-spec/` scaffold |
-| `/vibe-spec spec <request>` | Convert a request into a spec | New or updated spec |
-| `/vibe-spec build <spec-id>` | Implement an approved spec | Code changes and implementation notes |
-| `/vibe-spec review <spec-id>` | Review implementation against the spec | Review verdict and required fixes |
-| `/vibe-spec update <spec-id>` | Maintain or evolve an existing spec | Spec revision and changelog |
-| `/vibe-spec experiment <topic>` | Record an experiment, benchmark, model run, prompt trial, or data check | Reproducible experiment log |
-| `/vibe-spec audit` | Detect spec/code drift across the project | Audit report |
-| `/vibe-spec status` | Summarize spec states and next actions | Status summary |
+| `/vibe-spec init` | 初始化项目规格工作区 | `.vibe-spec/` |
+| `/vibe-spec spec <需求>` | 将需求转成可实现、可审核的 spec | 新 spec 或更新后的 spec |
+| `/vibe-spec build <spec-id>` | 按已批准 spec 实现 | 代码变更与实现记录 |
+| `/vibe-spec review <spec-id>` | 按验收标准审核实现 | 审核结论与修复项 |
+| `/vibe-spec update <spec-id>` | 维护或演进已有 spec | spec 修订与变更记录 |
+| `/vibe-spec lifecycle <spec-id>` | 查看 spec 生命周期状态和下一步 | 生命周期摘要 |
+| `/vibe-spec promote <spec-id> <state>` | 按门禁推进 spec 状态 | 状态变更和证据 |
+| `/vibe-spec sync <spec-id>` | 同步父 spec、决策或项目规则变化 | sync 记录 |
+| `/vibe-spec retire <spec-id>` | 废弃、替代或归档 spec | 退役记录 |
+| `/vibe-spec experiment <主题>` | 记录实验、benchmark、模型/Prompt 试验或数据检查 | 可复现实验记录 |
+| `/vibe-spec audit` | 检查 spec/code drift | 审计报告 |
+| `/vibe-spec status` | 汇总 spec 状态和下一步 | 项目交接摘要 |
 
-If invoked naturally, infer the closest route:
+如果用户自然语言调用，推断最接近的路径：
 
-- "Set up specs for this repo" -> `init`
-- "Write a spec for..." -> `spec`
-- "Build this spec" -> `build`
-- "Check whether this is done" -> `review`
-- "Change the old spec so..." -> `update`
-- "Record this benchmark/run/test result" -> `experiment`
-- "Find what is out of sync" -> `audit`
+- “给这个项目建立规范” -> `init`
+- “为这个功能写规格” -> `spec`
+- “按这个 spec 实现” -> `build`
+- “检查这个功能是否做完” -> `review`
+- “把旧 spec 改一下” -> `update`
+- “推进/回退这个 spec 状态” -> `promote`
+- “父 spec 改了，同步一下” -> `sync`
+- “这个功能废弃/被替代了” -> `retire`
+- “记录这次 benchmark/实验/测试结果” -> `experiment`
+- “看看项目哪里和规格不一致” -> `audit`
 
-## Required Project Files
+## 项目规范工作区
 
-Use `.vibe-spec/` as the cross-agent source of truth:
+使用 `.vibe-spec/` 作为跨 Agent 的项目事实来源：
 
 ```text
 .vibe-spec/
-  PROJECT_SPEC.md     # product goal, scope, users, boundaries
-  AGENT_GUIDE.md      # handoff rules for Claude, Codex, Cursor, etc.
-  STYLE_GUIDE.md      # engineering, UI, naming, and architecture preferences
-  DECISIONS.md        # durable architectural/product decisions
-  FILE_MAP.md         # what important files and directories are for
-  DATA_GUIDE.md       # data locations, schemas, privacy, retention
-  TESTING_GUIDE.md    # test commands, fixtures, scripts, expectations
-  EXPERIMENTS.md      # experiment log and reproducibility records
-  SPEC_INDEX.md       # all specs, states, parents, and next actions
-  specs/              # feature specs
-  reports/            # review and audit reports
-  scripts/            # project-local verification or maintenance scripts
+  PROJECT_SPEC.md     # 项目目标、用户、范围、边界
+  AGENT_GUIDE.md      # Claude/Codex/Cursor 等 Agent 接手规则
+  STYLE_GUIDE.md      # 工程、UI、命名、架构风格
+  DECISIONS.md        # 长期有效的产品/技术决策
+  LIFECYCLE.md        # spec 生命周期状态机、门禁和维护规则
+  FILE_MAP.md         # 重要文件和目录分别是什么
+  DATA_GUIDE.md       # 数据位置、schema、隐私、保留规则
+  TESTING_GUIDE.md    # 测试命令、fixtures、验证脚本和期望
+  EXPERIMENTS.md      # 实验、benchmark、评估和复现记录
+  SPEC_INDEX.md       # 所有 spec 的状态、父子关系和下一步
+  specs/              # 功能 spec
+  reports/            # review/audit 报告
+  scripts/            # 项目本地验证、迁移或维护脚本
 ```
 
-When running `init`, create these files if missing. If a file exists, preserve user content and only append missing sections when needed.
+运行 `init` 时创建缺失文件。已有文件不得覆盖；只补齐缺失结构或追加必要章节。
 
-## Bundled Resources
+## 资源使用
 
-Use bundled resources instead of recreating boilerplate:
+按需读取资源，不要默认加载所有 reference：
 
-| Resource | Use when |
+| 资源 | 何时使用 |
 |---|---|
-| `scripts/init_vibe_spec.py` | Initializing `.vibe-spec/` in a target project |
-| `assets/templates/FEATURE_SPEC.md` | Creating a new feature spec |
-| `assets/templates/REVIEW_REPORT.md` | Writing a standalone review report |
-| `assets/templates/AUDIT_REPORT.md` | Writing an audit report |
-| `assets/templates/FILE_MAP.md` | Documenting important files and directories |
-| `assets/templates/DATA_GUIDE.md` | Standardizing data, fixtures, generated artifacts, and privacy rules |
-| `assets/templates/TESTING_GUIDE.md` | Standardizing verification commands and scripts |
-| `assets/templates/EXPERIMENTS.md` | Recording reproducible experiments and benchmark runs |
-| `references/agent-compatibility.md` | Handoff must work across Claude, Codex, Cursor, or IDE agents |
-| `references/lifecycle.md` | Deciding whether to create, approve, implement, review, supersede, or deprecate specs |
-| `references/review-checklist.md` | Running `/vibe-spec review <spec-id>` |
-| `references/spec-drift.md` | Running `/vibe-spec audit` |
+| `scripts/init_vibe_spec.py` | 初始化目标项目的 `.vibe-spec/` |
+| `assets/templates/FEATURE_SPEC.md` | 创建新功能 spec |
+| `assets/templates/LIFECYCLE.md` | 初始化项目生命周期规则 |
+| `assets/templates/REVIEW_REPORT.md` | 编写独立 review 报告 |
+| `assets/templates/AUDIT_REPORT.md` | 编写 drift 审计报告 |
+| `assets/templates/FILE_MAP.md` | 维护文件/目录说明 |
+| `assets/templates/DATA_GUIDE.md` | 规范数据、fixtures、生成产物和隐私规则 |
+| `assets/templates/TESTING_GUIDE.md` | 规范验证命令和测试脚本 |
+| `assets/templates/EXPERIMENTS.md` | 记录可复现实验和 benchmark |
+| `references/lifecycle-governance.md` | 执行状态推进、同步、退役、门禁检查 |
+| `references/agent-compatibility.md` | 确保 Claude、Codex、Cursor 等工具都能接手 |
+| `references/lifecycle.md` | 判断创建、实现、审核、替代或废弃 spec 的流程 |
+| `references/review-checklist.md` | 执行 `/vibe-spec review <spec-id>` |
+| `references/spec-drift.md` | 执行 `/vibe-spec audit` |
+| `references/vibe-coding-field-notes.md` | 借鉴外部 vibe coding 经验时 |
 
-Read the relevant reference file before performing that workflow. Do not load unrelated references by default.
+## Agent 接手协议
 
-## Agent Intake Protocol
-
-Before modifying code, read the project context in this order:
+改代码前，按顺序读取：
 
 1. `.vibe-spec/AGENT_GUIDE.md`
 2. `.vibe-spec/PROJECT_SPEC.md`
 3. `.vibe-spec/SPEC_INDEX.md`
-4. `.vibe-spec/STYLE_GUIDE.md`
-5. `.vibe-spec/DECISIONS.md`
-6. `.vibe-spec/FILE_MAP.md`
-7. `.vibe-spec/DATA_GUIDE.md` when data, fixtures, experiments, or persistence are involved
-8. `.vibe-spec/TESTING_GUIDE.md` before running or adding tests
-9. `.vibe-spec/EXPERIMENTS.md` when evaluating variants, models, prompts, data, metrics, or performance
-10. The relevant spec under `.vibe-spec/specs/`
-11. Existing code, tests, and similar implementations
+4. `.vibe-spec/LIFECYCLE.md`
+5. `.vibe-spec/STYLE_GUIDE.md`
+6. `.vibe-spec/DECISIONS.md`
+7. `.vibe-spec/FILE_MAP.md`
+8. 涉及数据、fixtures、实验或持久化时读 `.vibe-spec/DATA_GUIDE.md`
+9. 运行或新增测试前读 `.vibe-spec/TESTING_GUIDE.md`
+10. 评估方案、模型、prompt、数据、性能时读 `.vibe-spec/EXPERIMENTS.md`
+11. 相关 spec
+12. 相关代码、测试和相似实现
 
-Do not rely on hidden memory from a previous agent. Treat `.vibe-spec/` and the repository as the current truth.
+不要依赖某个工具的隐藏记忆。以仓库和 `.vibe-spec/` 为准。
 
-If `.vibe-spec/` is missing and the user asks for implementation work, either run `init` first or create the minimum project/spec files needed for the task.
+## 状态值
 
-## Spec States
+状态值保持英文，便于脚本、表格和不同工具稳定识别：
 
-Use these states consistently:
+- `idea`: 只有想法，还不构成可实现规格
+- `draft`: 正在起草
+- `ready_for_review`: 等待规格审核
+- `approved`: 已批准，可以实现
+- `in_progress`: 正在实现
+- `implemented`: 代码完成，但未必验证通过
+- `verification_failed`: 验证失败
+- `verified`: 验证通过，但未必 review 完成
+- `reviewed`: 审核通过
+- `active`: 当前代表项目真实行为
+- `needs_update`: 需求、代码或决策变化，需要更新
+- `needs_sync`: 父 spec 或项目规则变化，需要同步
+- `needs_changes`: 审核发现必须修复的问题
+- `superseded`: 被新 spec 替代
+- `deprecated`: 功能或规则被废弃
+- `archived`: 历史保留，不参与日常决策
 
-- `draft`: still being shaped
-- `approved`: ready to implement
-- `in_progress`: implementation started
-- `implemented`: code changes are complete
-- `reviewed`: implementation passed review
-- `needs_changes`: review found required fixes
-- `needs_sync`: parent or project-level spec changed
-- `superseded`: replaced by another spec
-- `deprecated`: intentionally retired
+每次状态变化都要更新 `SPEC_INDEX.md`，并在目标 spec 的 `Lifecycle Log` 记录原因和证据。
 
-Update `SPEC_INDEX.md` whenever a spec state changes.
+## Spec 文件格式
 
-## Spec File Format
-
-Create feature specs under `.vibe-spec/specs/` using this naming pattern:
+功能 spec 放在 `.vibe-spec/specs/`，命名：
 
 ```text
 YYYY-MM-DD-short-kebab-title.md
 ```
 
-Each spec must include:
+每个 spec 至少包含：
 
 ```markdown
 ---
@@ -137,193 +152,209 @@ updated: YYYY-MM-DD
 owner_agent: unspecified
 ---
 
-# Spec: Human Title
+# Spec: 标题
 
 ## Summary
-
 ## Context
-
 ## Goals
-
 ## Non-Goals
-
 ## Inherits From
-
 ## Adds
-
 ## Overrides
-
 ## Requirements
-
 ## Acceptance Criteria
-
 ## Implementation Notes
-
 ## Verification Plan
-
 ## Review Notes
-
+## Lifecycle Log
 ## Changelog
 ```
 
-Keep specs concrete enough for another agent to implement without guessing. Avoid turning specs into long essays.
+Spec 要具体到另一个 Agent 可以不靠猜测继续实现。不要把 spec 写成长篇散文。
 
-## Inheritance Rules
+## 生命周期治理
 
-When a spec extends another spec:
+Spec 是长期资产，不是一次性计划。执行生命周期相关操作前读取 `references/lifecycle-governance.md`。
 
-- List parents in `parent` or `extends`.
-- Preserve inherited goals, constraints, style rules, and acceptance criteria unless explicitly overridden.
-- Record new behavior under `Adds`.
-- Record changed behavior under `Overrides`.
-- Never silently invalidate a parent rule.
-- If a parent changes, mark dependent specs as `needs_sync` until reviewed.
-- If a spec replaces another, set `supersedes` on the new spec and mark the old spec `superseded`.
+核心状态路径：
 
-When updating a spec, append a short `Changelog` entry with date, agent, and reason.
+```text
+idea -> draft -> ready_for_review -> approved -> in_progress
+-> implemented -> verified -> reviewed -> active
+```
 
-## Project Memory Maintenance
+维护路径：
 
-Keep these files current during normal work:
+```text
+active -> needs_update -> draft
+active -> needs_sync -> draft
+active -> superseded -> archived
+active -> deprecated -> archived
+implemented -> verification_failed -> in_progress
+reviewed -> needs_changes -> in_progress
+```
 
-- Update `FILE_MAP.md` when adding, deleting, moving, or repurposing important files or directories.
-- Update `DATA_GUIDE.md` when adding datasets, fixtures, generated artifacts, schemas, exports, or privacy-sensitive storage.
-- Update `TESTING_GUIDE.md` when discovering, adding, renaming, or changing test commands, verification scripts, fixtures, or manual verification procedures.
-- Update `EXPERIMENTS.md` when running benchmarks, model evaluations, prompt trials, data checks, performance tests, or exploratory comparisons that may influence implementation.
-- Add project-local workflow scripts to `.vibe-spec/scripts/` only when they support spec, test, audit, migration, or reproducibility workflows and do not belong in product code.
-- Mention relevant memory updates in implementation notes and final responses.
+禁止静默跳过关键门禁：
 
-## Default Workflows
+- 不要把 `draft` 直接当成 `implemented`。
+- 不要把 `implemented` 直接当成 `active`。
+- 不要在没有记录原因的情况下从 `active` 改成 `deprecated` 或 `superseded`。
+- 用户明确要求快速实现时可以跳过部分门禁，但必须在 `Lifecycle Log` 和最终回复中记录风险。
+
+## 继承规则
+
+当 spec 继承或扩展另一个 spec：
+
+- 在 `parent` 或 `extends` 中列出父 spec。
+- 默认继承父 spec 的目标、约束、风格规则和验收标准。
+- 新增行为写入 `Adds`。
+- 改变继承行为写入 `Overrides`。
+- 不得静默废除父规则。
+- 父 spec 更新后，子 spec 标记为 `needs_sync`，直到完成同步审核。
+- 新 spec 替代旧 spec 时，新 spec 填 `supersedes`，旧 spec 标记为 `superseded`。
+
+## 项目记忆维护
+
+日常工作中同步维护这些文件：
+
+- 添加、删除、移动、改职责的重要文件或目录时，更新 `FILE_MAP.md`。
+- 新增数据集、fixtures、生成产物、schema、导出文件或敏感数据存放时，更新 `DATA_GUIDE.md`。
+- 发现、新增、重命名或改变测试命令、验证脚本、fixtures、手动验证流程时，更新 `TESTING_GUIDE.md`。
+- 运行 benchmark、模型评估、prompt 试验、数据检查、性能测试或探索性对比时，更新 `EXPERIMENTS.md`。
+- `.vibe-spec/scripts/` 只放支持 spec、测试、审计、迁移或复现的项目本地脚本；产品代码脚本应放回项目自身脚本目录。
+- 在实现记录和最终回复中说明相关项目记忆更新。
+
+## 默认工作流
 
 ### Init
 
-Goal: make the repository handoff-ready for any coding agent.
+目标：让仓库可以被任何 Agent 接手。
 
-1. Inspect the repository structure and tech stack.
-2. Run `scripts/init_vibe_spec.py <target-repo>` when the script is available.
-3. Fill obvious project details, file map entries, test commands, and data locations from the repo.
-4. Leave unknowns as `TBD` instead of inventing product facts.
-5. Add first entries to `SPEC_INDEX.md`.
-6. Report what was initialized and what still needs user input.
+1. 扫描项目结构和技术栈。
+2. 运行 `scripts/init_vibe_spec.py <target-repo>`。
+3. 从仓库中填充明显的项目目标、文件地图、测试命令、数据位置。
+4. 不确定的信息写 `TBD`，不要编造。
+5. 更新 `SPEC_INDEX.md`。
+6. 汇报已初始化内容和仍需用户确认的问题。
 
 ### Spec
 
-Goal: turn a request into an implementable, reviewable spec.
+目标：把需求变成可实现、可审核、可维护的 spec。
 
-1. Read `references/lifecycle.md`.
-2. Read the required project files.
-3. Search for related specs and code.
-4. Decide whether to create, inherit, or update a spec.
-5. Ask only if the request affects product direction, data model, permissions, billing, security, destructive behavior, or has mutually exclusive interpretations.
-6. Write goals, non-goals, requirements, acceptance criteria, and verification plan.
-7. Update `SPEC_INDEX.md`.
+1. 读取 `references/lifecycle.md` 和 `references/lifecycle-governance.md`。
+2. 读取项目规范文件。
+3. 查找相关 spec 和代码。
+4. 判断是创建、继承、更新还是替代 spec。
+5. 只有涉及产品方向、数据模型、权限、支付、安全、破坏性行为或明显互斥解释时才打断用户。
+6. 写清 goals、non-goals、requirements、acceptance criteria、verification plan。
+7. 更新 `SPEC_INDEX.md` 和 `Lifecycle Log`。
 
 ### Build
 
-Goal: implement a spec while preserving project style.
+目标：按 spec 实现，并保持项目风格。
 
-1. Read the required project files and target spec.
-2. Confirm the spec is `approved`, or proceed only if the user explicitly asks to build a draft.
-3. Mark the spec `in_progress`.
-4. Inspect existing patterns before editing.
-5. Implement the smallest complete change that satisfies acceptance criteria.
-6. Update `Implementation Notes` with changed files and rationale.
-7. Run the verification plan or the closest available tests.
-8. Mark the spec `implemented` only after implementation and verification evidence are recorded.
+1. 读取项目规范文件和目标 spec。
+2. 确认 spec 为 `approved`；若用户要求实现草稿，记录跳过门禁的风险。
+3. 将状态推进到 `in_progress`。
+4. 先查找现有模式，再改代码。
+5. 做满足验收标准的最小完整实现。
+6. 更新 `Implementation Notes`、`FILE_MAP.md`、`DATA_GUIDE.md`、`TESTING_GUIDE.md` 或 `EXPERIMENTS.md`。
+7. 执行验证计划或最接近的现有测试。
+8. 只有记录验证证据后才推进到 `implemented` 或 `verified`。
 
 ### Review
 
-Goal: decide whether the implementation satisfies the spec.
+目标：判断实现是否满足 spec。
 
-1. Read `references/review-checklist.md`.
-2. Read the target spec, implementation notes, and changed code.
-3. Check every acceptance criterion.
-4. Check inherited constraints and overrides.
-5. Look for behavior implemented outside the spec.
-6. Run or inspect verification evidence.
-7. Write a verdict in `Review Notes`: `Pass`, `Pass with Notes`, `Needs Work`, or `Blocked`.
-8. Create a report under `.vibe-spec/reports/` for substantial reviews.
-9. Mark the spec `reviewed` only for passing work. Use `needs_changes` when required fixes remain.
+1. 读取 `references/review-checklist.md`。
+2. 读取目标 spec、实现记录和变更代码。
+3. 检查每条验收标准。
+4. 检查继承约束和 overrides。
+5. 查找 spec 外行为。
+6. 检查验证证据。
+7. 在 `Review Notes` 写结论：`Pass`、`Pass with Notes`、`Needs Work` 或 `Blocked`。
+8. 重要 review 另存到 `.vibe-spec/reports/`。
+9. 通过后推进到 `reviewed` 或 `active`；存在必须修复项时标记 `needs_changes`。
 
-### Update
+### Lifecycle / Promote / Sync / Retire
 
-Goal: evolve a spec without losing history.
+目标：规范化维护 spec 的状态变化。
 
-1. Read `references/lifecycle.md`.
-2. Read the target spec and related parent/child specs.
-3. Apply the requested change.
-4. Record adds, overrides, compatibility notes, and changelog.
-5. Mark affected children `needs_sync` when inherited behavior changes.
-6. Update `SPEC_INDEX.md`.
+1. 读取 `references/lifecycle-governance.md`。
+2. 检查目标状态对应的 gate。
+3. 确认需要更新的 spec、父子 spec、`SPEC_INDEX.md` 和项目记忆文件。
+4. 写入 `Lifecycle Log`。
+5. 只在证据齐全时推进状态。
 
 ### Experiment
 
-Goal: preserve reproducibility for exploratory or measurement-driven work.
+目标：保留探索和评估工作的可复现性。
 
-1. Read `.vibe-spec/EXPERIMENTS.md`, `.vibe-spec/DATA_GUIDE.md`, and `.vibe-spec/TESTING_GUIDE.md`.
-2. Record hypothesis, inputs, dataset or fixture version, script/command, environment, metrics, and result.
-3. Store generated artifacts only in approved paths.
-4. Record whether the experiment affected a spec, decision, or implementation plan.
-5. Keep raw data, derived data, and reports clearly separated.
+1. 读取 `.vibe-spec/EXPERIMENTS.md`、`.vibe-spec/DATA_GUIDE.md`、`.vibe-spec/TESTING_GUIDE.md`。
+2. 记录 hypothesis、inputs、数据或 fixture 版本、命令、环境、指标、结果。
+3. 只把生成产物存到批准路径。
+4. 记录实验是否影响 spec、decision 或实现计划。
+5. 区分 raw data、derived data 和 reports。
 
 ### Audit
 
-Goal: detect drift between specs and code.
+目标：发现 spec 与代码、测试、数据、项目记忆之间的漂移。
 
-Read `references/spec-drift.md`, then check for:
+读取 `references/spec-drift.md`，检查：
 
-- Approved specs with no implementation.
-- Implemented specs with no review.
-- Reviewed specs whose acceptance criteria no longer match code behavior.
-- Code features with no spec entry.
-- Deprecated or superseded specs still referenced by active specs.
-- Child specs that need sync after parent changes.
-- Style or architecture decisions violated by recent changes.
+- 已批准但没有实现的 spec。
+- 已实现但没有 review 的 spec。
+- 已 review 但验收标准与代码行为不一致的 spec。
+- 有代码行为但没有 spec 的功能。
+- 仍被 active spec 引用的 deprecated/superseded spec。
+- 父 spec 更新后未同步的子 spec。
+- 违反 `DECISIONS.md`、`STYLE_GUIDE.md`、`DATA_GUIDE.md` 或 `TESTING_GUIDE.md` 的实现。
+- `FILE_MAP.md` 与真实文件结构不一致。
 
-Write findings as actionable items with severity and affected files/specs. Save substantial audit reports under `.vibe-spec/reports/`.
+重要审计报告保存到 `.vibe-spec/reports/`。
 
 ### Status
 
-Goal: provide a compact cross-agent handoff snapshot.
+目标：生成可以贴给另一个 Agent 的交接摘要。
 
-1. Read `SPEC_INDEX.md`.
-2. Count specs by state.
-3. Identify blocked, stale, `needs_changes`, and `needs_sync` specs.
-4. List the next highest-value actions.
-5. Keep the response short enough to paste into another tool.
+1. 读取 `SPEC_INDEX.md`。
+2. 按状态统计 spec。
+3. 找出 `needs_changes`、`needs_sync`、`needs_update`、`verification_failed` 和长期停滞项。
+4. 列出最值得做的下一步。
+5. 回复保持简短。
 
-## Engineering Rules
+## 工程规则
 
-- Read before editing.
-- Prefer existing project patterns over new abstractions.
-- Keep changes scoped to the active spec.
-- Do not perform unrelated refactors.
-- Do not introduce dependencies without a clear spec-level reason.
-- Preserve user changes and existing git history.
-- Update specs when implementation reveals a necessary product or technical decision.
-- Treat tests, builds, lint checks, screenshots, or manual reproduction steps as verification evidence.
-- If verification cannot run, record the reason and residual risk.
+- 先读项目，再改代码。
+- 优先复用现有项目模式。
+- 改动范围绑定到当前 spec。
+- 不做无关重构。
+- 不无故引入依赖。
+- 保留用户已有改动和 git 历史。
+- 实现中发现需求或技术决策变化时，先更新 spec 或 `DECISIONS.md`。
+- 测试、构建、lint、截图、手动复现步骤都可以作为验证证据。
+- 无法验证时记录原因和剩余风险。
 
-## Final Response Format
+## 最终回复格式
 
-For completed work, answer briefly:
+完成实现时：
 
 ```markdown
-Done.
+完成。
 
 Spec:
 - `<spec-id>` -> `<state>`
 
-Changed:
+改动:
 - ...
 
-Verified:
+验证:
 - ...
 
-Notes:
+说明:
 - ...
 ```
 
-For review work, lead with the verdict and required fixes.
+做 review 时，先给 verdict 和必须修复项。
 
-For audit work, lead with highest-severity drift findings.
+做 audit 时，先列最高优先级 drift。

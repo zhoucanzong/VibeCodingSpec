@@ -1,35 +1,35 @@
-# Project Spec
+# 项目规格
 
-## Product Summary
-
-TBD
-
-## Target Users
+## 产品摘要
 
 TBD
 
-## Core Jobs
+## 目标用户
+
+TBD
+
+## 核心任务
 
 - TBD
 
-## In Scope
+## 范围内
 
 - TBD
 
-## Out of Scope
+## 范围外
 
 - TBD
 
-## Platform And Tech Stack
+## 平台与技术栈
 
 - TBD
 
-## Quality Bar
+## 质量标准
 
-- The project should remain maintainable across multiple coding agents.
-- Specs, implementation notes, and review evidence should stay synchronized.
-- New work should follow existing project conventions unless a spec records a deliberate change.
+- 项目应能被多个 coding agent 持续维护。
+- spec、实现记录、验证证据和审核结论应保持同步。
+- 新工作应遵循现有项目约定，除非 spec 记录了明确的变更理由。
 
-## Open Questions
+## 待确认问题
 
 - TBD

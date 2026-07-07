@@ -1,7 +1,7 @@
-# Decisions
+# 决策记录
 
-Use this file for durable decisions that future agents should not rediscover or casually reverse.
+用于记录未来 Agent 不应重复探索或随意推翻的长期决策。
 
-| Date | Decision | Context | Consequences | Owner |
+| 日期 | 决策 | 背景 | 影响 | 记录者 |
 |---|---|---|---|---|
 | TBD | TBD | TBD | TBD | TBD |
