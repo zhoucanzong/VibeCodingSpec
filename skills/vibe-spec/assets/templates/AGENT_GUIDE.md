@@ -8,8 +8,12 @@ Before changing code, read:
 2. `.vibe-spec/SPEC_INDEX.md`
 3. `.vibe-spec/STYLE_GUIDE.md`
 4. `.vibe-spec/DECISIONS.md`
-5. Relevant files under `.vibe-spec/specs/`
-6. Existing code and tests related to the task
+5. `.vibe-spec/FILE_MAP.md`
+6. `.vibe-spec/DATA_GUIDE.md` when data, fixtures, persistence, or generated artifacts are involved
+7. `.vibe-spec/TESTING_GUIDE.md` before running, adding, or changing tests
+8. `.vibe-spec/EXPERIMENTS.md` when doing benchmark, model, prompt, data, or performance work
+9. Relevant files under `.vibe-spec/specs/`
+10. Existing code and tests related to the task
 
 ## Cross-Agent Rules
 
@@ -19,6 +23,10 @@ Before changing code, read:
 - Keep implementation scoped to the active spec.
 - Update spec state and implementation notes when work progresses.
 - Record verification evidence before marking work implemented or reviewed.
+- Keep `FILE_MAP.md` current when important files or directories are added, removed, or repurposed.
+- Record data locations, fixtures, and generated artifacts in `DATA_GUIDE.md`.
+- Record test commands and project-local verification scripts in `TESTING_GUIDE.md`.
+- Record experiments with enough detail for another agent to reproduce them.
 
 ## When To Ask The User
 
