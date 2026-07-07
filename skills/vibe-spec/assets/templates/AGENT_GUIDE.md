@@ -7,14 +7,15 @@
 1. `.vibe-spec/PROJECT_SPEC.md`
 2. `.vibe-spec/SPEC_INDEX.md`
 3. `.vibe-spec/LIFECYCLE.md`
-4. `.vibe-spec/STYLE_GUIDE.md`
-5. `.vibe-spec/DECISIONS.md`
-6. `.vibe-spec/FILE_MAP.md`
+4. `.vibe-spec/MODULES.md`
+5. `.vibe-spec/STYLE_GUIDE.md`
+6. 启用 `memory` 时读 `.vibe-spec/DECISIONS.md` 和 `.vibe-spec/FILE_MAP.md`
 7. 涉及数据、fixtures、持久化或生成产物时读 `.vibe-spec/DATA_GUIDE.md`
 8. 运行、新增或修改测试前读 `.vibe-spec/TESTING_GUIDE.md`
 9. 做 benchmark、模型、prompt、数据或性能工作时读 `.vibe-spec/EXPERIMENTS.md`
-10. 相关 spec
-11. 相关代码和测试
+10. 涉及安全、发布、迁移、环境、可观测性、契约时读对应 guide
+11. 相关 spec
+12. 相关代码和测试
 
 ## 跨 Agent 规则
 
@@ -24,10 +25,11 @@
 - 实现范围绑定到当前 spec。
 - 推进工作时更新 spec 状态、实现记录和生命周期日志。
 - 标记 implemented、verified 或 reviewed 前记录验证证据。
-- 重要文件或目录新增、删除、移动、职责变化时更新 `FILE_MAP.md`。
-- 记录数据位置、fixtures 和生成产物到 `DATA_GUIDE.md`。
-- 记录测试命令和项目本地验证脚本到 `TESTING_GUIDE.md`。
-- 记录实验时写到 `EXPERIMENTS.md`，让下一个 Agent 可以复现。
+- 重要文件或目录新增、删除、移动、职责变化时，如果启用 `memory`，更新 `FILE_MAP.md`。
+- 数据位置、fixtures 和生成产物变化时，如果启用 `data`，更新 `DATA_GUIDE.md`。
+- 测试命令和项目本地验证脚本变化时，如果启用 `testing`，更新 `TESTING_GUIDE.md`。
+- 实验、benchmark、模型或 prompt 评估时，如果启用 `experiments`，写入 `EXPERIMENTS.md`。
+- 生产相关能力按需启用；不要因为模板存在就假设项目需要所有治理模块。
 
 ## 什么时候询问用户
 

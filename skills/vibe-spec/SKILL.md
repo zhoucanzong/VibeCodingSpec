@@ -1,7 +1,7 @@
 ---
 name: vibe-spec
-description: 跨 Agent 的规格驱动开发工作流。用于初始化项目规格、编写和继承 spec、维护 spec 生命周期、按 spec 实现、记录实验、规范数据存放和测试脚本、维护文件地图、审核实现结果、检查 spec/code drift，并帮助 Claude、Codex、Cursor 等工具按统一项目风格协作。
-argument-hint: <需求> 或 init 或 spec <需求> 或 build <spec-id> 或 review <spec-id> 或 update <spec-id> 或 lifecycle <spec-id> 或 promote <spec-id> <state> 或 sync <spec-id> 或 retire <spec-id> 或 experiment <主题> 或 audit 或 status
+description: 跨 Agent 的规格驱动开发工作流。用于按 minimal/standard/production profile 初始化项目规格、按模块启用治理能力、编写和继承 spec、维护 spec 生命周期、按 spec 实现、记录实验、规范数据存放和测试脚本、维护文件地图、审核实现结果、检查 spec/code drift，并帮助 Claude、Codex、Cursor 等工具按统一项目风格协作。
+argument-hint: <需求> 或 init [minimal|standard|production] [--modules <list>] 或 enable <module> 或 spec <需求> 或 build <spec-id> 或 review <spec-id> 或 update <spec-id> 或 lifecycle <spec-id> 或 promote <spec-id> <state> 或 sync <spec-id> 或 retire <spec-id> 或 experiment <主题> 或 audit 或 status
 allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFetch]
 ---
 
@@ -18,6 +18,10 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 | 命令 | 作用 | 默认产物 |
 |---|---|---|
 | `/vibe-spec init` | 初始化项目规格工作区 | `.vibe-spec/` |
+| `/vibe-spec init minimal` | 轻量初始化 | core 文件 |
+| `/vibe-spec init standard` | 常规应用初始化 | core + memory + testing + review |
+| `/vibe-spec init production` | 生产项目初始化 | 全量生产治理模块 |
+| `/vibe-spec enable <module>` | 后续启用单个治理模块 | 新模块文件和 `MODULES.md` 更新 |
 | `/vibe-spec spec <需求>` | 将需求转成可实现、可审核的 spec | 新 spec 或更新后的 spec |
 | `/vibe-spec build <spec-id>` | 按已批准 spec 实现 | 代码变更与实现记录 |
 | `/vibe-spec review <spec-id>` | 按验收标准审核实现 | 审核结论与修复项 |
@@ -33,6 +37,8 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 如果用户自然语言调用，推断最接近的路径：
 
 - “给这个项目建立规范” -> `init`
+- “只做轻量规范” -> `init minimal`
+- “启用安全/发布/迁移模块” -> `enable security/release/migration`
 - “为这个功能写规格” -> `spec`
 - “按这个 spec 实现” -> `build`
 - “检查这个功能是否做完” -> `review`
@@ -54,17 +60,73 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
   STYLE_GUIDE.md      # 工程、UI、命名、架构风格
   DECISIONS.md        # 长期有效的产品/技术决策
   LIFECYCLE.md        # spec 生命周期状态机、门禁和维护规则
+  MODULES.md          # 当前启用的治理模块
   FILE_MAP.md         # 重要文件和目录分别是什么
   DATA_GUIDE.md       # 数据位置、schema、隐私、保留规则
   TESTING_GUIDE.md    # 测试命令、fixtures、验证脚本和期望
   EXPERIMENTS.md      # 实验、benchmark、评估和复现记录
+  SECURITY_GUIDE.md   # 可选：安全、隐私、权限边界
+  RELEASE_GUIDE.md    # 可选：发布、灰度、回滚、发布后验证
+  MIGRATION_GUIDE.md  # 可选：数据库和数据迁移
+  ENVIRONMENT_GUIDE.md # 可选：环境变量和配置
+  OBSERVABILITY_GUIDE.md # 可选：日志、指标、告警、观察窗口
+  CONTRACTS.md        # 可选：API、事件、外部集成契约
   SPEC_INDEX.md       # 所有 spec 的状态、父子关系和下一步
   specs/              # 功能 spec
   reports/            # review/audit 报告
   scripts/            # 项目本地验证、迁移或维护脚本
 ```
 
-运行 `init` 时创建缺失文件。已有文件不得覆盖；只补齐缺失结构或追加必要章节。
+运行 `init` 时按 profile/module 创建缺失文件。已有文件不得覆盖；只补齐缺失结构或追加必要章节。
+
+## Init Profile 和模块
+
+`init` 不应默认创建所有治理文件。用户未指定 profile 时，先询问或根据仓库给出建议：
+
+- 空仓库、demo、prototype：建议 `minimal`。
+- 常规应用、有源码和测试但生产治理不复杂：建议 `standard`。
+- 有 CI、Docker、infra、数据库迁移、auth、payment、API keys 或真实用户数据：建议 `production`。
+
+Profile 映射：
+
+| Profile | 模块 | 适合场景 |
+|---|---|---|
+| `minimal` | `core` | 原型、小项目、刚开始探索 |
+| `standard` | `core,memory,testing,review` | 常规应用开发 |
+| `production` | `core,memory,testing,review,data,experiments,security,release,migration,environment,observability,contracts,scripts` | 生产项目 |
+
+模块含义：
+
+| Module | 文件/目录 | 用途 |
+|---|---|---|
+| `core` | `PROJECT_SPEC.md`、`AGENT_GUIDE.md`、`STYLE_GUIDE.md`、`LIFECYCLE.md`、`SPEC_INDEX.md`、`MODULES.md`、`specs/` | 最小规格和生命周期 |
+| `memory` | `DECISIONS.md`、`FILE_MAP.md` | 项目记忆和文件地图 |
+| `testing` | `TESTING_GUIDE.md` | 测试命令和验证脚本 |
+| `review` | `reports/`、review/audit 模板 | 审核和漂移报告 |
+| `data` | `DATA_GUIDE.md` | 数据、fixtures、schema、生成产物 |
+| `experiments` | `EXPERIMENTS.md` | 实验、benchmark、评估 |
+| `security` | `SECURITY_GUIDE.md` | 安全、隐私、权限 |
+| `release` | `RELEASE_GUIDE.md` | 发布、回滚、灰度 |
+| `migration` | `MIGRATION_GUIDE.md` | 数据库迁移和 backfill |
+| `environment` | `ENVIRONMENT_GUIDE.md` | 环境变量和配置 |
+| `observability` | `OBSERVABILITY_GUIDE.md` | 日志、指标、告警 |
+| `contracts` | `CONTRACTS.md` | API、事件、外部集成契约 |
+| `scripts` | `.vibe-spec/scripts/` | 本地治理脚本 |
+
+脚本用法：
+
+```bash
+scripts/init_vibe_spec.py . --profile minimal
+scripts/init_vibe_spec.py . --profile standard
+scripts/init_vibe_spec.py . --profile production
+scripts/init_vibe_spec.py . --profile standard --modules data experiments
+```
+
+后续启用模块时，使用同一个脚本追加模块，不删除已有文件：
+
+```bash
+scripts/init_vibe_spec.py . --profile minimal --modules security release
+```
 
 ## 资源使用
 
@@ -75,12 +137,19 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 | `scripts/init_vibe_spec.py` | 初始化目标项目的 `.vibe-spec/` |
 | `assets/templates/FEATURE_SPEC.md` | 创建新功能 spec |
 | `assets/templates/LIFECYCLE.md` | 初始化项目生命周期规则 |
+| `assets/templates/MODULES.md` | 记录当前启用模块 |
 | `assets/templates/REVIEW_REPORT.md` | 编写独立 review 报告 |
 | `assets/templates/AUDIT_REPORT.md` | 编写 drift 审计报告 |
 | `assets/templates/FILE_MAP.md` | 维护文件/目录说明 |
 | `assets/templates/DATA_GUIDE.md` | 规范数据、fixtures、生成产物和隐私规则 |
 | `assets/templates/TESTING_GUIDE.md` | 规范验证命令和测试脚本 |
 | `assets/templates/EXPERIMENTS.md` | 记录可复现实验和 benchmark |
+| `assets/templates/SECURITY_GUIDE.md` | 启用安全/隐私模块 |
+| `assets/templates/RELEASE_GUIDE.md` | 启用发布/回滚模块 |
+| `assets/templates/MIGRATION_GUIDE.md` | 启用迁移模块 |
+| `assets/templates/ENVIRONMENT_GUIDE.md` | 启用环境配置模块 |
+| `assets/templates/OBSERVABILITY_GUIDE.md` | 启用可观测性模块 |
+| `assets/templates/CONTRACTS.md` | 启用 API/集成契约模块 |
 | `references/lifecycle-governance.md` | 执行状态推进、同步、退役、门禁检查 |
 | `references/agent-compatibility.md` | 确保 Claude、Codex、Cursor 等工具都能接手 |
 | `references/lifecycle.md` | 判断创建、实现、审核、替代或废弃 spec 的流程 |
@@ -96,14 +165,15 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 2. `.vibe-spec/PROJECT_SPEC.md`
 3. `.vibe-spec/SPEC_INDEX.md`
 4. `.vibe-spec/LIFECYCLE.md`
-5. `.vibe-spec/STYLE_GUIDE.md`
-6. `.vibe-spec/DECISIONS.md`
-7. `.vibe-spec/FILE_MAP.md`
+5. `.vibe-spec/MODULES.md`
+6. `.vibe-spec/STYLE_GUIDE.md`
+7. `.vibe-spec/DECISIONS.md` 和 `.vibe-spec/FILE_MAP.md`，如果启用了 `memory`
 8. 涉及数据、fixtures、实验或持久化时读 `.vibe-spec/DATA_GUIDE.md`
 9. 运行或新增测试前读 `.vibe-spec/TESTING_GUIDE.md`
 10. 评估方案、模型、prompt、数据、性能时读 `.vibe-spec/EXPERIMENTS.md`
-11. 相关 spec
-12. 相关代码、测试和相似实现
+11. 涉及安全、发布、迁移、环境、可观测性或契约时读取对应 guide
+12. 相关 spec
+13. 相关代码、测试和相似实现
 
 不要依赖某个工具的隐藏记忆。以仓库和 `.vibe-spec/` 为准。
 
@@ -231,11 +301,22 @@ reviewed -> needs_changes -> in_progress
 目标：让仓库可以被任何 Agent 接手。
 
 1. 扫描项目结构和技术栈。
-2. 运行 `scripts/init_vibe_spec.py <target-repo>`。
-3. 从仓库中填充明显的项目目标、文件地图、测试命令、数据位置。
-4. 不确定的信息写 `TBD`，不要编造。
-5. 更新 `SPEC_INDEX.md`。
-6. 汇报已初始化内容和仍需用户确认的问题。
+2. 如果用户没有指定 profile，询问一次；若用户让你自行判断，则根据项目复杂度选择 `minimal`、`standard` 或 `production`。
+3. 运行 `scripts/init_vibe_spec.py <target-repo> --profile <profile> [--modules ...]`。
+4. 从仓库中填充明显的项目目标、文件地图、测试命令、数据位置和已启用模块。
+5. 不确定的信息写 `TBD`，不要编造。
+6. 更新 `SPEC_INDEX.md` 和 `MODULES.md`。
+7. 汇报启用的 profile、modules 和仍需用户确认的问题。
+
+### Enable
+
+目标：在已有 `.vibe-spec/` 上按需追加治理模块。
+
+1. 确认用户要启用的模块。
+2. 运行 `scripts/init_vibe_spec.py <target-repo> --profile minimal --modules <module...>`。
+3. 不覆盖已有文件。
+4. 更新 `MODULES.md`，说明启用原因。
+5. 如新模块影响现有 spec，标记相关 spec 为 `needs_update` 或 `needs_sync`。
 
 ### Spec
 
