@@ -12,7 +12,9 @@
 - 维护 spec 生命周期：`draft`、`approved`、`implemented`、`verified`、`reviewed`、`active`、`deprecated` 等。
 - 支持 spec 继承、override、supersession、sync 和 retire。
 - 指导 Agent 按 spec 实现，而不是靠隐式记忆。
+- 完成实现后进入 post-build review，支持 subagent 审查或 checklist 自审。
 - 审核实现是否满足 acceptance criteria。
+- 用脚本检查 `.vibe-spec/` 结构、状态和常见治理缺口。
 - 审计 spec/code drift。
 - 维护文件地图，让 Agent 知道重要文件和目录是什么。
 - 规范实验记录、数据位置、fixtures、测试命令和验证脚本。
@@ -45,6 +47,8 @@ Claude 风格 slash command：
 /vibe-spec spec Add passwordless login
 /vibe-spec build passwordless-login
 /vibe-spec review passwordless-login
+/vibe-spec check
+/vibe-spec check --strict
 /vibe-spec update passwordless-login
 /vibe-spec lifecycle passwordless-login
 /vibe-spec promote passwordless-login verified
@@ -119,6 +123,15 @@ skills/vibe-spec/scripts/init_vibe_spec.py /path/to/project --profile standard -
 skills/vibe-spec/scripts/init_vibe_spec.py /path/to/project --profile minimal --modules security release
 ```
 
+检查脚本：
+
+```bash
+skills/vibe-spec/scripts/check_vibe_spec.py /path/to/project
+skills/vibe-spec/scripts/check_vibe_spec.py /path/to/project --strict
+```
+
+默认 P0/P1 会返回非零；`--strict` 下 P2 也会导致失败，适合 CI 或发布前检查。
+
 ## Skill 结构
 
 ```text
@@ -155,6 +168,7 @@ skills/
       spec-drift.md
       vibe-coding-field-notes.md
     scripts/
+      check_vibe_spec.py
       init_vibe_spec.py
 ```
 
@@ -168,5 +182,6 @@ Spec 不应该是一次性计划，而应该是项目长期资产：
 - 实现记录说明改了什么和为什么。
 - Review 记录验收标准是否真的满足。
 - Audit 捕捉代码和 spec 的漂移。
+- Check 脚本让这些规则可以进入 CI 或本地交付检查。
 - Experiments 记录输入、命令、指标、产物和决策影响。
 - Data 和 Testing guide 让验证可以被不同工具复现。

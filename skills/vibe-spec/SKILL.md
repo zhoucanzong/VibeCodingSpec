@@ -1,7 +1,7 @@
 ---
 name: vibe-spec
-description: 跨 Agent 的规格驱动开发工作流。用于按 minimal/standard/production profile 初始化项目规格、按模块启用治理能力、编写和继承 spec、维护 spec 生命周期、按 spec 实现、记录实验、规范数据存放和测试脚本、维护文件地图、审核实现结果、检查 spec/code drift，并帮助 Claude、Codex、Cursor 等工具按统一项目风格协作。
-argument-hint: <需求> 或 init [minimal|standard|production] [--modules <list>] 或 enable <module> 或 spec <需求> 或 build <spec-id> 或 review <spec-id> 或 update <spec-id> 或 lifecycle <spec-id> 或 promote <spec-id> <state> 或 sync <spec-id> 或 retire <spec-id> 或 experiment <主题> 或 audit 或 status
+description: 跨 Agent 的规格驱动开发工作流。用于按 minimal/standard/production profile 初始化项目规格、按模块启用治理能力、编写和继承 spec、维护 spec 生命周期、按 spec 实现、执行 post-build review、记录实验、规范数据存放和测试脚本、维护文件地图、审核实现结果、运行自动检查、检查 spec/code drift，并帮助 Claude、Codex、Cursor 等工具按统一项目风格协作。
+argument-hint: <需求> 或 init [minimal|standard|production] [--modules <list>] 或 enable <module> 或 spec <需求> 或 build <spec-id> 或 review <spec-id> 或 check [--strict] 或 update <spec-id> 或 lifecycle <spec-id> 或 promote <spec-id> <state> 或 sync <spec-id> 或 retire <spec-id> 或 experiment <主题> 或 audit 或 status
 allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFetch]
 ---
 
@@ -25,6 +25,7 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 | `/vibe-spec spec <需求>` | 将需求转成可实现、可审核的 spec | 新 spec 或更新后的 spec |
 | `/vibe-spec build <spec-id>` | 按已批准 spec 实现 | 代码变更与实现记录 |
 | `/vibe-spec review <spec-id>` | 按验收标准审核实现 | 审核结论与修复项 |
+| `/vibe-spec check` | 自动检查 `.vibe-spec/` 结构、状态和常见治理缺口 | 检查结果 |
 | `/vibe-spec update <spec-id>` | 维护或演进已有 spec | spec 修订与变更记录 |
 | `/vibe-spec lifecycle <spec-id>` | 查看 spec 生命周期状态和下一步 | 生命周期摘要 |
 | `/vibe-spec promote <spec-id> <state>` | 按门禁推进 spec 状态 | 状态变更和证据 |
@@ -42,6 +43,7 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 - “为这个功能写规格” -> `spec`
 - “按这个 spec 实现” -> `build`
 - “检查这个功能是否做完” -> `review`
+- “检查这个项目的 vibe-spec 是否健康” -> `check`
 - “把旧 spec 改一下” -> `update`
 - “推进/回退这个 spec 状态” -> `promote`
 - “父 spec 改了，同步一下” -> `sync`
@@ -128,6 +130,13 @@ scripts/init_vibe_spec.py . --profile standard --modules data experiments
 scripts/init_vibe_spec.py . --profile minimal --modules security release
 ```
 
+检查脚本用法：
+
+```bash
+scripts/check_vibe_spec.py .
+scripts/check_vibe_spec.py . --strict
+```
+
 ## 资源使用
 
 按需读取资源，不要默认加载所有 reference：
@@ -135,6 +144,7 @@ scripts/init_vibe_spec.py . --profile minimal --modules security release
 | 资源 | 何时使用 |
 |---|---|
 | `scripts/init_vibe_spec.py` | 初始化目标项目的 `.vibe-spec/` |
+| `scripts/check_vibe_spec.py` | 自动检查 `.vibe-spec/` 结构、状态和治理缺口 |
 | `assets/templates/FEATURE_SPEC.md` | 创建新功能 spec |
 | `assets/templates/LIFECYCLE.md` | 初始化项目生命周期规则 |
 | `assets/templates/MODULES.md` | 记录当前启用模块 |
@@ -341,7 +351,24 @@ reviewed -> needs_changes -> in_progress
 5. 做满足验收标准的最小完整实现。
 6. 更新 `Implementation Notes`、`FILE_MAP.md`、`DATA_GUIDE.md`、`TESTING_GUIDE.md` 或 `EXPERIMENTS.md`。
 7. 执行验证计划或最接近的现有测试。
-8. 只有记录验证证据后才推进到 `implemented` 或 `verified`。
+8. 运行 `scripts/check_vibe_spec.py .`，或说明为什么无法运行。
+9. 进入 Post-Build Review。
+10. 只有记录验证证据后才推进到 `implemented` 或 `verified`。
+
+### Post-Build Review
+
+目标：避免实现者自称完成但没有独立审查。
+
+1. 完成 `build` 后必须进入 review 路径。
+2. 如果当前工具支持 subagent，启动独立 review agent。只传递 spec、diff、验证结果和相关文件，不传递实现者结论。
+3. 如果当前工具不支持 subagent，主 Agent 使用 `references/review-checklist.md` 自审。
+4. review 结果写入目标 spec 的 `Review Notes`，重大改动另存 `.vibe-spec/reports/`。
+5. 以下情况强制要求独立 review；如果无法使用 subagent，必须在最终回复和 `Review Notes` 中说明：
+   - 改动超过 3 个文件。
+   - 涉及 auth、payment、security、privacy、migration、external_api。
+   - 要推进到 `reviewed` 或 `active`。
+   - audit 发现 P0/P1。
+   - 父 spec 变化影响多个 child specs。
 
 ### Review
 
@@ -393,6 +420,15 @@ reviewed -> needs_changes -> in_progress
 - `FILE_MAP.md` 与真实文件结构不一致。
 
 重要审计报告保存到 `.vibe-spec/reports/`。
+
+### Check
+
+目标：用脚本发现结构和生命周期缺口。
+
+1. 运行 `scripts/check_vibe_spec.py <target>`。
+2. CI 或发布前使用 `--strict`。
+3. P0/P1 必须修复后再推进状态。
+4. P2/P3 可以作为后续项，但不能长期留在 active 规格中。
 
 ### Status
 
