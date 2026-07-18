@@ -31,25 +31,25 @@
 - Produces: `SpecDocument`, `CommandResult`, `find_spec()`, `load_spec()`, `write_spec()`, `replace_section()`, `append_lifecycle()`, `rebuild_spec_index()` and `emit_result()`.
 - Produces: stable result keys `ok`, `command`, `changes`, `findings`, `next_actions`.
 
-- [ ] **Step 1: Write failing core tests**
+- [x] **Step 1: Write failing core tests**
 
 Test frontmatter scalar/list parsing, section replacement, lifecycle append, duplicate spec detection, index rebuild and JSON result shape with real temporary files.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_core.py -v`
 
 Expected: import failure because `vibe_spec_core.py` does not exist.
 
-- [ ] **Step 3: Implement the minimal shared core**
+- [x] **Step 3: Implement the minimal shared core**
 
 Use standard-library dataclasses and atomic `Path.replace()` writes. Parse only the constrained frontmatter grammar used by the templates.
 
-- [ ] **Step 4: Add context templates**
+- [x] **Step 4: Add context templates**
 
 `HANDOFF.md` contains current goal, active specs, working state, recent verification, blockers, worktree risks and next action. `ROADMAP.md` contains `Now`, `Next`, `Later`, and `Done` tables with spec links.
 
-- [ ] **Step 5: Verify GREEN**
+- [x] **Step 5: Verify GREEN**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_core.py -v`
 
