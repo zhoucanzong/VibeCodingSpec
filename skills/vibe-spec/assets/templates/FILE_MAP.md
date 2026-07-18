@@ -16,6 +16,17 @@
 | `README.md` | 文档 | 项目概览 | project | TBD |
 | `.vibe-spec/` | 规格工作区 | 跨 Agent 项目记忆和流程状态 | vibe-spec | 由 vibe-spec 创建 |
 
+## 代码层级
+
+从项目入口到具体实现记录主要层级。可以运行 `refresh_context.py` 获取候选，再由 Agent 核对后更新。
+
+| 层级 | 路径 | 职责 | 依赖方向 | 关联 Spec |
+|---|---|---|---|---|
+| 入口 | unknown | unknown | 向内依赖 | project |
+| 领域/核心 | unknown | unknown | 不依赖 UI/基础设施细节 | project |
+| 适配/基础设施 | unknown | unknown | 实现核心定义的契约 | project |
+| 测试 | unknown | unknown | 验证公开行为 | project |
+
 ## 生成或临时路径
 
 | 路径 | 用途 | 可删除? | 备注 |

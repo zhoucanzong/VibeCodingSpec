@@ -70,21 +70,21 @@ Expected: all Task 1 tests pass.
 - `init_vibe_spec.py TARGET --profile PROFILE [--modules ...] [--agent-entry claude codex] [--ci] [--json]`.
 - `refresh_context.py TARGET [--json]` prints repository-map candidates and never changes `FILE_MAP.md`.
 
-- [ ] **Step 1: Write failing initialization tests**
+- [x] **Step 1: Write failing initialization tests**
 
 Cover HANDOFF/ROADMAP creation, optional thin entries, optional CI, idempotency, JSON output and preservation of existing entry files.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_init_and_context.py -v`
 
 Expected: failures for unsupported arguments and missing context files.
 
-- [ ] **Step 3: Implement init options and candidate scanning**
+- [x] **Step 3: Implement init options and candidate scanning**
 
 Map `claude` to `CLAUDE.md` and `codex` to `AGENTS.md`. Render a short pointer to `.vibe-spec/HANDOFF.md` and `.vibe-spec/AGENT_GUIDE.md`. Scan tracked/top-level project paths while excluding VCS, caches, build output and `.vibe-spec`.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_init_and_context.py -v`
 

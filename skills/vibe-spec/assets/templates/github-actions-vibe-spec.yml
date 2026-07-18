@@ -1,0 +1,22 @@
+name: vibe-spec
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Compile governance scripts
+        run: python -m compileall -q .vibe-spec/scripts
+      - name: Check vibe-spec
+        run: python .vibe-spec/scripts/check_vibe_spec.py . --strict

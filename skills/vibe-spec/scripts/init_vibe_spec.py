@@ -7,6 +7,8 @@ import argparse
 import shutil
 from pathlib import Path
 
+from vibe_spec_core import CommandResult, emit_result
+
 
 MODULE_FILES = {
     "core": [
@@ -16,6 +18,8 @@ MODULE_FILES = {
         ("LIFECYCLE.md", ""),
         ("SPEC_INDEX.md", ""),
         ("MODULES.md", ""),
+        ("HANDOFF.md", ""),
+        ("ROADMAP.md", ""),
         ("FEATURE_SPEC.md", "specs/example-feature-spec.md"),
     ],
     "memory": [
@@ -233,7 +237,38 @@ def init_workspace(target: Path, profile: str, extra_modules: list[str]) -> list
     if "core" in modules:
         messages.append(update_modules_file(workspace, profile, modules))
 
+    if "scripts" in modules:
+        for script in sorted((skill_root() / "scripts").glob("*.py")):
+            messages.append(copy_if_missing(script, workspace / "scripts" / script.name))
+
     return messages
+
+
+AGENT_ENTRY_FILES = {
+    "claude": "CLAUDE.md",
+    "codex": "AGENTS.md",
+    "cursor": ".cursor/rules/vibe-spec.md",
+}
+
+
+def install_agent_entries(target: Path, agents: list[str]) -> list[str]:
+    template = (skill_root() / "assets" / "templates" / "AGENT_ENTRY.md").read_text(encoding="utf-8")
+    messages: list[str] = []
+    for agent in agents:
+        destination = target / AGENT_ENTRY_FILES[agent]
+        if destination.exists():
+            messages.append(f"kept     {destination}")
+            continue
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(template.replace("{{AGENT}}", agent), encoding="utf-8")
+        messages.append(f"created  {destination}")
+    return messages
+
+
+def install_ci(target: Path) -> str:
+    source = skill_root() / "assets" / "templates" / "github-actions-vibe-spec.yml"
+    destination = target / ".github" / "workflows" / "vibe-spec.yml"
+    return copy_if_missing(source, destination)
 
 
 def list_profiles() -> None:
@@ -270,6 +305,15 @@ def main() -> int:
         action="store_true",
         help="列出可用 profile 和 module 后退出。",
     )
+    parser.add_argument(
+        "--agent-entry",
+        nargs="*",
+        choices=sorted(AGENT_ENTRY_FILES),
+        default=[],
+        help="创建可选的跨 Agent 薄入口：claude、codex、cursor。",
+    )
+    parser.add_argument("--ci", action="store_true", help="安装 GitHub Actions 检查模板。")
+    parser.add_argument("--json", action="store_true", help="输出稳定 JSON 结果。")
     args = parser.parse_args()
 
     if args.list_profiles:
@@ -287,8 +331,23 @@ def main() -> int:
     except ValueError as exc:
         parser.error(str(exc))
 
-    for message in messages:
-        print(message)
+    messages.extend(install_agent_entries(target, args.agent_entry))
+    if args.ci:
+        messages.append(install_ci(target))
+
+    if args.json:
+        emit_result(
+            CommandResult(
+                True,
+                "init",
+                changes=messages,
+                next_actions=["补齐 .vibe-spec/HANDOFF.md 中的当前项目上下文"],
+            ),
+            as_json=True,
+        )
+    else:
+        for message in messages:
+            print(message)
     return 0
 
 
