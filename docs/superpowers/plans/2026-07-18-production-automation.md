@@ -170,21 +170,21 @@ Expected: all Task 4 tests pass.
 - `check_vibe_spec.py TARGET [--strict] [--json]` checks index parity, duplicate IDs, parent/extends references, lifecycle evidence, handoff and roadmap.
 - `install_git_hooks.py TARGET [--force] [--json]` creates managed `pre-commit` and `pre-push` hooks and refuses to replace unmanaged hooks unless `--force`.
 
-- [ ] **Step 1: Write failing governance tests**
+- [x] **Step 1: Write failing governance tests**
 
 Cover orphan index rows, unindexed specs, broken references, stale/missing handoff data, JSON findings and non-overwrite hook behavior.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_check_and_hooks.py -v`
 
 Expected: failures for missing checks and hook installer.
 
-- [ ] **Step 3: Implement checks and explicit hook installation**
+- [x] **Step 3: Implement checks and explicit hook installation**
 
 Hooks locate the repository root and invoke copied `.vibe-spec/scripts/check_vibe_spec.py` when available. Existing unmanaged hooks cause a clear error without mutation.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_check_and_hooks.py -v`
 

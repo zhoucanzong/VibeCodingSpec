@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
-"""检查目标项目的 .vibe-spec 结构、状态和常见治理缺口。"""
+"""检查 .vibe-spec 结构、索引、引用、状态证据和交接上下文。"""
 
 from __future__ import annotations
 
 import argparse
 import re
-import sys
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
+
+from vibe_spec_core import (
+    CommandResult,
+    VALID_STATES,
+    emit_result,
+    meaningful,
+    parse_frontmatter,
+    section_content,
+)
 
 
 REQUIRED_CORE_FILES = [
@@ -17,6 +25,8 @@ REQUIRED_CORE_FILES = [
     "LIFECYCLE.md",
     "SPEC_INDEX.md",
     "MODULES.md",
+    "HANDOFF.md",
+    "ROADMAP.md",
 ]
 
 MODULE_REQUIRED_FILES = {
@@ -32,25 +42,6 @@ MODULE_REQUIRED_FILES = {
     "contracts": ["CONTRACTS.md"],
 }
 
-VALID_STATES = {
-    "idea",
-    "draft",
-    "ready_for_review",
-    "approved",
-    "in_progress",
-    "implemented",
-    "verification_failed",
-    "verified",
-    "reviewed",
-    "active",
-    "needs_update",
-    "needs_sync",
-    "needs_changes",
-    "superseded",
-    "deprecated",
-    "archived",
-}
-
 IMPLEMENTED_STATES = {"implemented", "verified", "reviewed", "active"}
 VERIFIED_STATES = {"verified", "reviewed", "active"}
 REVIEWED_STATES = {"reviewed", "active"}
@@ -63,6 +54,21 @@ class Finding:
     code: str
     location: str
     message: str
+
+
+@dataclass
+class SpecRecord:
+    path: Path
+    metadata: dict[str, object]
+    text: str
+
+    @property
+    def spec_id(self) -> str:
+        return str(self.metadata.get("spec_id", ""))
+
+    @property
+    def status(self) -> str:
+        return str(self.metadata.get("status", ""))
 
 
 def read_text(path: Path) -> str:
@@ -83,106 +89,57 @@ def parse_enabled_modules(modules_file: Path) -> set[str]:
         if len(cells) < 2:
             continue
         module, value = cells[0], cells[1].lower()
-        if module in {"模块", "---"}:
-            continue
-        if value in {"yes", "enabled", "true", "启用"}:
+        if module not in {"模块", "---"} and value in {"yes", "enabled", "true", "启用"}:
             enabled.add(module)
     return enabled
 
 
-def parse_frontmatter(text: str) -> dict[str, str]:
-    if not text.startswith("---"):
-        return {}
-    end = text.find("\n---", 3)
-    if end == -1:
-        return {}
-    frontmatter = text[3:end].strip()
-    result: dict[str, str] = {}
-    for line in frontmatter.splitlines():
-        if ":" not in line:
+def parse_specs(specs_dir: Path) -> tuple[list[SpecRecord], list[Finding]]:
+    records: list[SpecRecord] = []
+    findings: list[Finding] = []
+    for path in sorted(specs_dir.glob("*.md")):
+        text = read_text(path)
+        try:
+            metadata, _ = parse_frontmatter(text)
+        except RuntimeError as exc:
+            findings.append(Finding("P2", "missing_frontmatter", str(path), str(exc)))
+            metadata = {}
+        records.append(SpecRecord(path, metadata, text))
+    return records, findings
+
+
+def index_ids(index_path: Path) -> set[str]:
+    if not index_path.exists():
+        return set()
+    result: set[str] = set()
+    for line in read_text(index_path).splitlines():
+        if not line.startswith("|"):
             continue
-        key, value = line.split(":", 1)
-        result[key.strip()] = value.strip().strip('"').strip("'")
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if cells and cells[0] not in {"Spec ID", "---", "project"}:
+            result.add(cells[0])
     return result
 
 
-def has_meaningful_section(text: str, heading: str) -> bool:
-    pattern = re.compile(rf"^## {re.escape(heading)}\s*$", re.MULTILINE)
-    match = pattern.search(text)
-    if not match:
-        return False
-    next_heading = re.search(r"^## ", text[match.end() :], re.MULTILINE)
-    section = text[match.end() : match.end() + next_heading.start()] if next_heading else text[match.end() :]
-    stripped = section.strip()
-    return bool(stripped and stripped not in {"TBD", "尚未实现。", "尚未审核。", "No implementation yet.", "No review yet."})
+def list_value(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if not value or value == "[]":
+        return []
+    return [item.strip() for item in str(value).strip("[]").split(",") if item.strip()]
 
 
-def check_workspace(workspace: Path) -> list[Finding]:
+def check_spec(record: SpecRecord) -> list[Finding]:
     findings: list[Finding] = []
-    if not workspace.exists():
-        return [
-            Finding(
-                "P0",
-                "missing_workspace",
-                str(workspace),
-                "缺少 .vibe-spec 工作区。先运行 init_vibe_spec.py。",
-            )
-        ]
-
-    for name in REQUIRED_CORE_FILES:
-        if not (workspace / name).exists():
-            findings.append(Finding("P1", "missing_core_file", name, "缺少 core 文件。"))
-
-    enabled_modules = parse_enabled_modules(workspace / "MODULES.md")
-    if not enabled_modules:
-        findings.append(Finding("P2", "unknown_modules", "MODULES.md", "无法识别已启用模块。"))
-
-    for module in enabled_modules:
-        for name in MODULE_REQUIRED_FILES.get(module, []):
-            if not (workspace / name).exists():
-                findings.append(
-                    Finding("P1", "missing_module_file", name, f"模块 `{module}` 已启用，但缺少文件。")
-                )
-
-    specs_dir = workspace / "specs"
-    if not specs_dir.exists():
-        findings.append(Finding("P1", "missing_specs_dir", "specs/", "缺少 specs 目录。"))
-    else:
-        spec_files = sorted(specs_dir.glob("*.md"))
-        if not spec_files:
-            findings.append(Finding("P3", "no_specs", "specs/", "当前没有任何 spec 文件。"))
-        for spec_file in spec_files:
-            findings.extend(check_spec_file(spec_file))
-
-    if "review" in enabled_modules:
-        reports_dir = workspace / "reports"
-        if not reports_dir.exists():
-            findings.append(Finding("P2", "missing_reports_dir", "reports/", "review 模块已启用，但缺少 reports 目录。"))
-
-    if "scripts" in enabled_modules and not (workspace / "scripts").exists():
-        findings.append(Finding("P2", "missing_scripts_dir", "scripts/", "scripts 模块已启用，但缺少 scripts 目录。"))
-
-    return findings
-
-
-def check_spec_file(spec_file: Path) -> list[Finding]:
-    findings: list[Finding] = []
-    text = read_text(spec_file)
-    frontmatter = parse_frontmatter(text)
-    status = frontmatter.get("status", "")
-    spec_id = frontmatter.get("spec_id", spec_file.stem)
-    location = str(spec_file)
-
-    if not frontmatter:
-        findings.append(Finding("P2", "missing_frontmatter", location, "spec 缺少 frontmatter。"))
-    if not spec_id:
+    location = str(record.path)
+    if not record.spec_id:
         findings.append(Finding("P2", "missing_spec_id", location, "spec 缺少 spec_id。"))
-    if not status:
+    if not record.status:
         findings.append(Finding("P2", "missing_status", location, "spec 缺少 status。"))
-    elif status not in VALID_STATES:
-        findings.append(Finding("P1", "invalid_status", location, f"未知 status `{status}`。"))
+    elif record.status not in VALID_STATES:
+        findings.append(Finding("P1", "invalid_status", location, f"未知 status `{record.status}`。"))
 
-    required_sections = [
+    for heading in (
         "Summary",
         "Context",
         "Goals",
@@ -191,57 +148,130 @@ def check_spec_file(spec_file: Path) -> list[Finding]:
         "Acceptance Criteria",
         "Verification Plan",
         "Lifecycle Log",
-    ]
-    for heading in required_sections:
-        if f"## {heading}" not in text:
+    ):
+        if section_content(record.text, heading) is None:
             findings.append(Finding("P2", "missing_section", location, f"缺少章节 `## {heading}`。"))
-
-    if status in IMPLEMENTED_STATES and not has_meaningful_section(text, "Implementation Notes"):
-        findings.append(Finding("P1", "missing_implementation_notes", location, "已实现状态缺少有效 Implementation Notes。"))
-    if status in VERIFIED_STATES and not has_meaningful_section(text, "Verification Plan"):
-        findings.append(Finding("P1", "missing_verification_evidence", location, "已验证状态缺少有效验证记录。"))
-    if status in REVIEWED_STATES and not has_meaningful_section(text, "Review Notes"):
-        findings.append(Finding("P1", "missing_review_notes", location, "已 review/active 状态缺少有效 Review Notes。"))
-    if status in ACTIVE_LIKE_STATES and "TBD" in text:
+    if record.status in IMPLEMENTED_STATES and not meaningful(section_content(record.text, "Implementation Notes")):
+        findings.append(Finding("P1", "missing_implementation_notes", location, "已实现状态缺少有效实现记录。"))
+    verification = section_content(record.text, "Verification Plan") or ""
+    if record.status in VERIFIED_STATES and not re.search(r"(?i)(`[^`]+`.*(pass|通过|exit\s*0)|结果\s*[:：].*(pass|通过|成功))", verification):
+        findings.append(Finding("P1", "missing_verification_evidence", location, "已验证状态缺少通过证据。"))
+    review = section_content(record.text, "Review Notes") or ""
+    if record.status in REVIEWED_STATES and not re.search(r"(?i)(pass|approved|通过|无阻塞)", review):
+        findings.append(Finding("P1", "missing_review_notes", location, "已审核状态缺少通过记录。"))
+    if record.status in ACTIVE_LIKE_STATES and "TBD" in record.text:
         findings.append(Finding("P2", "active_has_tbd", location, "active/needs_* spec 仍包含 TBD。"))
-
     return findings
 
 
-def format_findings(findings: list[Finding]) -> str:
-    if not findings:
-        return "vibe-spec check: PASS\n"
+def check_handoff(workspace: Path) -> list[Finding]:
+    path = workspace / "HANDOFF.md"
+    if not path.exists():
+        return []
+    text = read_text(path)
+    incomplete = []
+    for heading in ("Current Goal", "Working State", "Next Action"):
+        content = section_content(text, heading)
+        if not meaningful(content) or (content and "unknown" in content.lower()):
+            incomplete.append(heading)
+    if not incomplete:
+        return []
+    return [
+        Finding(
+            "P2",
+            "incomplete_handoff",
+            "HANDOFF.md",
+            "交接入口尚未补齐：" + ", ".join(incomplete),
+        )
+    ]
 
-    order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
-    lines = ["vibe-spec check: FINDINGS", ""]
-    for finding in sorted(findings, key=lambda item: (order.get(item.severity, 9), item.code, item.location)):
-        lines.append(f"- {finding.severity} [{finding.code}] {finding.location}: {finding.message}")
-    lines.append("")
-    return "\n".join(lines)
+
+def check_workspace(workspace: Path) -> list[Finding]:
+    if not workspace.exists():
+        return [Finding("P0", "missing_workspace", str(workspace), "缺少 .vibe-spec 工作区。")]
+    findings: list[Finding] = []
+    for name in REQUIRED_CORE_FILES:
+        if not (workspace / name).exists():
+            findings.append(Finding("P1", "missing_core_file", name, "缺少 core 文件。"))
+
+    enabled = parse_enabled_modules(workspace / "MODULES.md")
+    if not enabled:
+        findings.append(Finding("P2", "unknown_modules", "MODULES.md", "无法识别已启用模块。"))
+    for module in enabled:
+        for name in MODULE_REQUIRED_FILES.get(module, []):
+            if not (workspace / name).exists():
+                findings.append(Finding("P1", "missing_module_file", name, f"模块 `{module}` 已启用但缺少文件。"))
+    if "review" in enabled and not (workspace / "reports").exists():
+        findings.append(Finding("P2", "missing_reports_dir", "reports/", "review 模块已启用但缺少目录。"))
+    if "scripts" in enabled and not (workspace / "scripts").exists():
+        findings.append(Finding("P2", "missing_scripts_dir", "scripts/", "scripts 模块已启用但缺少目录。"))
+
+    specs_dir = workspace / "specs"
+    if not specs_dir.exists():
+        findings.append(Finding("P1", "missing_specs_dir", "specs/", "缺少 specs 目录。"))
+        return findings + check_handoff(workspace)
+    records, parse_findings = parse_specs(specs_dir)
+    findings.extend(parse_findings)
+    if not records:
+        findings.append(Finding("P3", "no_specs", "specs/", "当前没有功能 spec。"))
+    for record in records:
+        findings.extend(check_spec(record))
+
+    by_id: dict[str, list[SpecRecord]] = {}
+    for record in records:
+        if record.spec_id:
+            by_id.setdefault(record.spec_id, []).append(record)
+    for spec_id, matches in by_id.items():
+        if len(matches) > 1:
+            findings.append(Finding("P1", "duplicate_spec_id", "specs/", f"spec_id `{spec_id}` 出现 {len(matches)} 次。"))
+
+    known_ids = set(by_id)
+    for record in records:
+        parent = str(record.metadata.get("parent", "none"))
+        if parent not in {"none", "project"} and parent not in known_ids:
+            findings.append(Finding("P1", "broken_parent", str(record.path), f"父 spec `{parent}` 不存在。"))
+        for ref in list_value(record.metadata.get("extends", [])):
+            if ref not in known_ids and ref not in {"project", "none"}:
+                findings.append(Finding("P1", "broken_extends", str(record.path), f"extends 引用 `{ref}` 不存在。"))
+
+    indexed = index_ids(workspace / "SPEC_INDEX.md")
+    for spec_id in sorted(known_ids - indexed):
+        findings.append(Finding("P1", "unindexed_spec", "SPEC_INDEX.md", f"spec `{spec_id}` 未进入索引。"))
+    for spec_id in sorted(indexed - known_ids):
+        findings.append(Finding("P1", "orphan_index_entry", "SPEC_INDEX.md", f"索引项 `{spec_id}` 没有对应 spec。"))
+    findings.extend(check_handoff(workspace))
+    return findings
 
 
 def should_fail(findings: list[Finding], strict: bool) -> bool:
     failing = {"P0", "P1"}
     if strict:
         failing.add("P2")
-    return any(finding.severity in failing for finding in findings)
+    return any(item.severity in failing for item in findings)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="检查目标项目的 .vibe-spec。")
-    parser.add_argument("target", nargs="?", default=".", help="目标项目路径，默认当前目录。")
+    parser.add_argument("target", nargs="?", default=".")
     parser.add_argument("--strict", action="store_true", help="P2 也作为失败。")
     parser.add_argument("--quiet", action="store_true", help="无问题时不输出。")
+    parser.add_argument("--json", action="store_true", help="输出稳定 JSON。")
     args = parser.parse_args()
-
     target = Path(args.target).expanduser().resolve()
-    workspace = target / ".vibe-spec"
-    findings = check_workspace(workspace)
-
-    if findings or not args.quiet:
-        print(format_findings(findings), end="")
-
-    return 1 if should_fail(findings, args.strict) else 0
+    findings = check_workspace(target / ".vibe-spec")
+    failed = should_fail(findings, args.strict)
+    result = CommandResult(
+        not failed,
+        "check",
+        changes=[],
+        findings=[asdict(item) for item in findings],
+        next_actions=[] if not findings else ["按严重级别修复 finding 后重新运行检查"],
+    )
+    if args.json:
+        emit_result(result, True)
+    elif findings or not args.quiet:
+        emit_result(result, False)
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":
