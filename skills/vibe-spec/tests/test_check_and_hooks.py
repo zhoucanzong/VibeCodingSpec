@@ -196,6 +196,13 @@ class CheckAndHooksTests(unittest.TestCase):
         wrong_hook = main / ".git" / "worktrees" / "linked" / "hooks" / "pre-commit"
         self.assertIn("managed-by-vibe-spec", common_hook.read_text(encoding="utf-8"))
         self.assertFalse(wrong_hook.exists())
+        sibling_commit = subprocess.run(
+            ["git", "-C", str(main), "commit", "--allow-empty", "-m", "sibling hook check"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(sibling_commit.returncode, 0, sibling_commit.stderr + sibling_commit.stdout)
 
 
 if __name__ == "__main__":

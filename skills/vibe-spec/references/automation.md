@@ -94,7 +94,7 @@ scripts/install_git_hooks.py <repo> --json
 
 - 默认 P0/P1 返回非零；`--strict` 下 P2 也返回非零。
 - CI 模板执行脚本编译和严格检查。
-- hook 安装器复制最小运行时；`pre-commit` 快速检查，`pre-push` 严格检查。
+- hook 安装器把最小运行时放入 Git common dir；所有 linked worktree 共用 `pre-commit` 快速检查和 `pre-push` 严格检查。
 - 已有非 vibe-spec hook 时拒绝覆盖。只有用户明确要求才使用 `--force`；原 hook 备份为 `.pre-vibe-spec`。
 
 ## 错误处理

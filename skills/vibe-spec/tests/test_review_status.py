@@ -122,6 +122,32 @@ class ReviewStatusTests(unittest.TestCase):
 
         self.assertTrue(any("审核" in finding for finding in findings))
 
+    def test_review_does_not_leave_orphan_report_when_spec_cannot_be_staged(self) -> None:
+        self.mark_verified()
+        reports = self.root / ".vibe-spec" / "reports"
+        specs = self.root / ".vibe-spec" / "specs"
+        before = set(reports.glob("*login-flow-review*.md"))
+        specs.chmod(0o500)
+        try:
+            completed = self.run_script(
+                REVIEW,
+                "login-flow",
+                "--verdict",
+                "pass",
+                "--mode",
+                "subagent",
+                "--summary",
+                "should rollback",
+                "--json",
+                check=False,
+            )
+        finally:
+            specs.chmod(0o700)
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertEqual(set(reports.glob("*login-flow-review*.md")), before)
+        self.assertNotIn("should rollback", load_spec(self.spec_path).body)
+
     def test_review_context_excludes_implementation_and_review_conclusions(self) -> None:
         spec = load_spec(self.spec_path)
         spec.body = replace_section(spec.body, "Requirements", "- 必须登录。")

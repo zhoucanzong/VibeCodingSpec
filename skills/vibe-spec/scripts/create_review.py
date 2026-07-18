@@ -9,13 +9,13 @@ from pathlib import Path
 from vibe_spec_core import (
     CommandResult,
     SpecError,
+    atomic_write_many,
     append_section_line,
     command_error,
     emit_result,
     find_spec,
     today,
     workspace_path,
-    write_spec,
 )
 
 
@@ -89,7 +89,6 @@ def create_review(
             "",
         ]
     )
-    report_path.write_text(report, encoding="utf-8")
     relative_report = report_path.relative_to(target)
     note = (
         f"- {event_date}: {verdict_label} via `{mode}`; verification_id={verification_id}; "
@@ -97,7 +96,12 @@ def create_review(
     )
     spec.body = append_section_line(spec.body, "Review Notes", note)
     spec.metadata["updated"] = event_date
-    write_spec(spec)
+    atomic_write_many(
+        {
+            report_path: report,
+            spec.path: spec.text.rstrip() + "\n",
+        }
+    )
     return report_path
 
 

@@ -9,7 +9,7 @@ import stat
 import subprocess
 from pathlib import Path
 
-from vibe_spec_core import CommandResult, SpecError, command_error, emit_result, workspace_path
+from vibe_spec_core import CommandResult, SpecError, command_error, emit_result
 
 
 MARKER = "managed-by-vibe-spec"
@@ -46,7 +46,9 @@ def hook_text(strict: bool) -> str:
             "#!/bin/sh",
             f"# {MARKER}",
             "root=$(git rev-parse --show-toplevel) || exit 1",
-            f'exec python3 "$root/.vibe-spec/scripts/check_vibe_spec.py" "$root"{flag}',
+            "common=$(git rev-parse --git-common-dir) || exit 1",
+            'case "$common" in /*) ;; *) common="$root/$common" ;; esac',
+            f'exec python3 "$common/vibe-spec/check_vibe_spec.py" "$root"{flag}',
             "",
         ]
     )
@@ -69,13 +71,11 @@ def install_hooks(target: Path, force: bool) -> list[Path]:
     if conflicts:
         raise SpecError("备份文件已存在，拒绝覆盖: " + ", ".join(str(path) for path in conflicts))
 
-    workspace_scripts = workspace_path(target) / "scripts"
-    workspace_scripts.mkdir(parents=True, exist_ok=True)
+    runtime = git_common_dir(target) / "vibe-spec"
+    runtime.mkdir(parents=True, exist_ok=True)
     for name in ("vibe_spec_core.py", "check_vibe_spec.py"):
         source = skill_root() / "scripts" / name
-        destination = workspace_scripts / name
-        if not destination.exists():
-            shutil.copyfile(source, destination)
+        shutil.copyfile(source, runtime / name)
 
     for path, backup in backups:
         path.replace(backup)
