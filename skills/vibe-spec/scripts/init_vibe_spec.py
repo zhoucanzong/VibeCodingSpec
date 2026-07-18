@@ -239,6 +239,10 @@ def init_workspace(target: Path, profile: str, extra_modules: list[str]) -> list
     if "scripts" in modules:
         for script in sorted((skill_root() / "scripts").glob("*.py")):
             messages.append(copy_if_missing(script, workspace / "scripts" / script.name))
+        target_templates = workspace / "assets" / "templates"
+        for template in sorted((skill_root() / "assets" / "templates").iterdir()):
+            if template.is_file():
+                messages.append(copy_if_missing(template, target_templates / template.name))
 
     return messages
 
@@ -264,10 +268,15 @@ def install_agent_entries(target: Path, agents: list[str]) -> list[str]:
     return messages
 
 
-def install_ci(target: Path) -> str:
+def install_ci(target: Path) -> list[str]:
+    workspace_scripts = target / ".vibe-spec" / "scripts"
+    messages = []
+    for name in ("vibe_spec_core.py", "check_vibe_spec.py"):
+        messages.append(copy_if_missing(skill_root() / "scripts" / name, workspace_scripts / name))
     source = skill_root() / "assets" / "templates" / "github-actions-vibe-spec.yml"
     destination = target / ".github" / "workflows" / "vibe-spec.yml"
-    return copy_if_missing(source, destination)
+    messages.append(copy_if_missing(source, destination))
+    return messages
 
 
 def list_profiles() -> None:
@@ -332,7 +341,7 @@ def main() -> int:
 
     messages.extend(install_agent_entries(target, args.agent_entry))
     if args.ci:
-        messages.append(install_ci(target))
+        messages.extend(install_ci(target))
 
     if args.json:
         emit_result(

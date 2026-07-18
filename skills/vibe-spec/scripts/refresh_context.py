@@ -36,6 +36,18 @@ MANIFESTS = {
     "Makefile": "项目任务入口",
 }
 
+HIERARCHY_DIRS = {
+    "app",
+    "apps",
+    "cmd",
+    "lib",
+    "packages",
+    "scripts",
+    "src",
+    "test",
+    "tests",
+}
+
 
 def candidate_paths(target: Path) -> list[dict[str, str]]:
     candidates: list[dict[str, str]] = []
@@ -46,6 +58,16 @@ def candidate_paths(target: Path) -> list[dict[str, str]]:
             candidates.append(
                 {"path": f"{path.name}/", "type": "目录", "suggested_purpose": "请 Agent 核对职责"}
             )
+            if path.name in HIERARCHY_DIRS:
+                children = [child for child in path.iterdir() if child.name not in IGNORED and not child.name.startswith(".")]
+                for child in sorted(children, key=lambda item: item.name.lower())[:30]:
+                    candidates.append(
+                        {
+                            "path": f"{path.name}/{child.name}{'/' if child.is_dir() else ''}",
+                            "type": "子目录" if child.is_dir() else "代码/配置文件",
+                            "suggested_purpose": "请 Agent 核对职责",
+                        }
+                    )
         elif path.name in MANIFESTS:
             candidates.append(
                 {"path": path.name, "type": "项目入口", "suggested_purpose": MANIFESTS[path.name]}

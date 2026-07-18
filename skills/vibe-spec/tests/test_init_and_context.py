@@ -59,6 +59,27 @@ class InitAndContextTests(unittest.TestCase):
         self.assertTrue((scripts / "check_vibe_spec.py").exists())
         self.assertTrue((scripts / "vibe_spec_core.py").exists())
         self.assertTrue((scripts / "update_handoff.py").stat().st_mode & 0o111)
+        deployed_create = subprocess.run(
+            [
+                str(scripts / "create_spec.py"),
+                str(self.root),
+                "deployed-flow",
+                "--title",
+                "Deployed Flow",
+                "--json",
+            ],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        self.assertTrue(json.loads(deployed_create.stdout)["ok"])
+
+    def test_ci_on_minimal_profile_installs_its_runtime(self) -> None:
+        self.run_script(INIT, "--profile", "minimal", "--ci")
+
+        scripts = self.root / ".vibe-spec" / "scripts"
+        self.assertTrue((scripts / "check_vibe_spec.py").exists())
+        self.assertTrue((scripts / "vibe_spec_core.py").exists())
 
     def test_json_init_has_stable_result_contract(self) -> None:
         completed = self.run_script(INIT, "--profile", "minimal", "--json")
@@ -80,6 +101,7 @@ class InitAndContextTests(unittest.TestCase):
         payload = json.loads(completed.stdout)
         rendered = json.dumps(payload["changes"], ensure_ascii=False)
         self.assertIn("src/", rendered)
+        self.assertIn("src/main.py", rendered)
         self.assertIn("package.json", rendered)
         self.assertEqual(file_map.read_text(encoding="utf-8"), before)
 
