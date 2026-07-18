@@ -230,6 +230,6 @@ Run the available `quick_validate.py` against `skills/vibe-spec`, compile all sc
 
 Expected: every command exits 0 and generated cross-Agent context is readable from the fixed handoff entry.
 
-- [ ] **Step 6: Review, commit and push**
+- [x] **Step 6: Review, commit and push**
 
 Review the full diff against the design, fix all critical/important findings, commit implementation, then push `main` to `origin`.
