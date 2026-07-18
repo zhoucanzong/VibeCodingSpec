@@ -57,16 +57,20 @@ def install_hooks(target: Path, force: bool) -> list[Path]:
     if unmanaged and not force:
         raise SpecError("拒绝覆盖已有非 vibe-spec hook: " + ", ".join(path.name for path in unmanaged))
 
+    backups = [(path, path.with_name(path.name + ".pre-vibe-spec")) for path in unmanaged]
+    conflicts = [backup for _, backup in backups if backup.exists()]
+    if conflicts:
+        raise SpecError("备份文件已存在，拒绝覆盖: " + ", ".join(str(path) for path in conflicts))
+
     workspace_scripts = workspace_path(target) / "scripts"
     workspace_scripts.mkdir(parents=True, exist_ok=True)
     for name in ("vibe_spec_core.py", "check_vibe_spec.py"):
         source = skill_root() / "scripts" / name
-        shutil.copyfile(source, workspace_scripts / name)
+        destination = workspace_scripts / name
+        if not destination.exists():
+            shutil.copyfile(source, destination)
 
-    for path in unmanaged:
-        backup = path.with_name(path.name + ".pre-vibe-spec")
-        if backup.exists():
-            raise SpecError(f"备份文件已存在，拒绝覆盖: {backup}")
+    for path, backup in backups:
         path.replace(backup)
 
     for path, strict in ((destinations[0], False), (destinations[1], True)):

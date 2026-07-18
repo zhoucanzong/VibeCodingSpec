@@ -10,6 +10,11 @@ from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+from vibe_spec_core import load_spec, write_spec  # noqa: E402
+
+
 INIT = SCRIPTS / "init_vibe_spec.py"
 CREATE = SCRIPTS / "create_spec.py"
 CHECK = SCRIPTS / "check_vibe_spec.py"
@@ -82,6 +87,19 @@ class CheckAndHooksTests(unittest.TestCase):
 
         self.assertTrue(any(item["code"] == "incomplete_handoff" for item in findings))
 
+    def test_check_detects_index_status_and_lifecycle_evidence_drift(self) -> None:
+        self.create("login-flow")
+        path = next((self.root / ".vibe-spec" / "specs").glob("*login-flow.md"))
+        spec = load_spec(path)
+        spec.metadata["status"] = "approved"
+        write_spec(spec)
+
+        completed = self.run_script(CHECK, "--strict", "--json", check=False)
+        codes = {finding["code"] for finding in json.loads(completed.stdout)["findings"]}
+
+        self.assertIn("index_status_mismatch", codes)
+        self.assertIn("missing_lifecycle_evidence", codes)
+
     def test_hook_installer_refuses_unmanaged_hook_without_modifying_it(self) -> None:
         subprocess.run(["git", "init", str(self.root)], check=True, capture_output=True)
         hook = self.root / ".git" / "hooks" / "pre-commit"
@@ -105,6 +123,32 @@ class CheckAndHooksTests(unittest.TestCase):
             self.assertTrue(hook.exists())
             self.assertTrue(hook.stat().st_mode & 0o111)
             self.assertIn("managed-by-vibe-spec", hook.read_text(encoding="utf-8"))
+
+    def test_force_hook_install_preflights_all_backups_before_mutation(self) -> None:
+        subprocess.run(["git", "init", str(self.root)], check=True, capture_output=True)
+        hooks = self.root / ".git" / "hooks"
+        pre_commit = hooks / "pre-commit"
+        pre_push = hooks / "pre-push"
+        pre_commit.write_text("#!/bin/sh\necho first\n", encoding="utf-8")
+        pre_push.write_text("#!/bin/sh\necho second\n", encoding="utf-8")
+        (hooks / "pre-push.pre-vibe-spec").write_text("existing backup\n", encoding="utf-8")
+
+        completed = self.run_script(HOOKS, "--force", "--json", check=False)
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("echo first", pre_commit.read_text(encoding="utf-8"))
+        self.assertIn("echo second", pre_push.read_text(encoding="utf-8"))
+
+    def test_hook_installer_preserves_existing_project_check_script(self) -> None:
+        subprocess.run(["git", "init", str(self.root)], check=True, capture_output=True)
+        scripts = self.root / ".vibe-spec" / "scripts"
+        scripts.mkdir(parents=True)
+        custom = scripts / "check_vibe_spec.py"
+        custom.write_text("# project-owned check\n", encoding="utf-8")
+
+        self.run_script(HOOKS, "--json")
+
+        self.assertEqual(custom.read_text(encoding="utf-8"), "# project-owned check\n")
 
 
 if __name__ == "__main__":

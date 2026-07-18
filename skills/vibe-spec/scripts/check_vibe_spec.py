@@ -108,16 +108,16 @@ def parse_specs(specs_dir: Path) -> tuple[list[SpecRecord], list[Finding]]:
     return records, findings
 
 
-def index_ids(index_path: Path) -> set[str]:
+def index_entries(index_path: Path) -> dict[str, str]:
     if not index_path.exists():
-        return set()
-    result: set[str] = set()
+        return {}
+    result: dict[str, str] = {}
     for line in read_text(index_path).splitlines():
         if not line.startswith("|"):
             continue
         cells = [cell.strip() for cell in line.strip("|").split("|")]
-        if cells and cells[0] not in {"Spec ID", "---", "project"}:
-            result.add(cells[0])
+        if len(cells) >= 3 and cells[0] not in {"Spec ID", "---", "project"}:
+            result[cells[0]] = cells[2]
     return result
 
 
@@ -161,6 +161,16 @@ def check_spec(record: SpecRecord) -> list[Finding]:
         findings.append(Finding("P1", "missing_review_notes", location, "已审核状态缺少通过记录。"))
     if record.status in ACTIVE_LIKE_STATES and "TBD" in record.text:
         findings.append(Finding("P2", "active_has_tbd", location, "active/needs_* spec 仍包含 TBD。"))
+    if record.status not in {"", "idea", "draft"}:
+        lifecycle = section_content(record.text, "Lifecycle Log") or ""
+        target_state = re.escape(record.status)
+        evidence = re.search(rf"->\s*`{target_state}`", lifecycle) or re.search(
+            rf"\|[^|\n]*\|\s*{target_state}\s*\|", lifecycle
+        )
+        if not evidence:
+            findings.append(
+                Finding("P1", "missing_lifecycle_evidence", location, f"状态 `{record.status}` 没有对应生命周期记录。")
+            )
     return findings
 
 
@@ -234,11 +244,23 @@ def check_workspace(workspace: Path) -> list[Finding]:
             if ref not in known_ids and ref not in {"project", "none"}:
                 findings.append(Finding("P1", "broken_extends", str(record.path), f"extends 引用 `{ref}` 不存在。"))
 
-    indexed = index_ids(workspace / "SPEC_INDEX.md")
+    index = index_entries(workspace / "SPEC_INDEX.md")
+    indexed = set(index)
     for spec_id in sorted(known_ids - indexed):
         findings.append(Finding("P1", "unindexed_spec", "SPEC_INDEX.md", f"spec `{spec_id}` 未进入索引。"))
     for spec_id in sorted(indexed - known_ids):
         findings.append(Finding("P1", "orphan_index_entry", "SPEC_INDEX.md", f"索引项 `{spec_id}` 没有对应 spec。"))
+    for spec_id in sorted(known_ids & indexed):
+        actual_states = {record.status for record in by_id[spec_id]}
+        if index[spec_id] not in actual_states:
+            findings.append(
+                Finding(
+                    "P1",
+                    "index_status_mismatch",
+                    "SPEC_INDEX.md",
+                    f"索引状态 `{index[spec_id]}` 与 spec `{spec_id}` 的状态不一致。",
+                )
+            )
     findings.extend(check_handoff(workspace))
     return findings
 
