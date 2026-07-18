@@ -204,27 +204,27 @@ Expected: all Task 5 tests pass.
 - Skill routes `init`, `context`, `handoff`, `roadmap`, `spec`, `promote`, `review`, `status`, `check`, `sync`, and `retire` while preserving natural-language use.
 - `agents/openai.yaml` exposes Chinese display metadata and a default prompt that invokes `$vibe-spec`.
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: Write failing contract tests**
 
 Assert concise valid frontmatter, required command/resource routing, Agent-first language, context start/end protocol, subagent review path and fallback path.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_skill_contract.py -v`
 
 Expected: failures for missing metadata and new routes.
 
-- [ ] **Step 3: Update Skill and documentation**
+- [x] **Step 3: Update Skill and documentation**
 
 Keep `SKILL.md` below 500 lines by moving command details to `references/automation.md`. Preserve Chinese instructions and English machine keys/status values.
 
-- [ ] **Step 4: Verify GREEN and full suite**
+- [x] **Step 4: Verify GREEN and full suite**
 
 Run: `python3 -m unittest discover -s skills/vibe-spec/tests -v`
 
 Expected: all tests pass with zero failures.
 
-- [ ] **Step 5: Validate the skill package**
+- [x] **Step 5: Validate the skill package**
 
 Run the available `quick_validate.py` against `skills/vibe-spec`, compile all scripts, run `git diff --check`, initialize a production fixture and execute strict check/status JSON smoke tests.
 

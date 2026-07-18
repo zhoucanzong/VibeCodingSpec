@@ -53,9 +53,12 @@ class InitAndContextTests(unittest.TestCase):
         self.run_script(INIT, "--profile", "production", "--ci")
 
         self.assertTrue((self.root / ".github" / "workflows" / "vibe-spec.yml").exists())
+        workflow = (self.root / ".github" / "workflows" / "vibe-spec.yml").read_text(encoding="utf-8")
+        self.assertIn("unittest discover", workflow)
         scripts = self.root / ".vibe-spec" / "scripts"
         self.assertTrue((scripts / "check_vibe_spec.py").exists())
         self.assertTrue((scripts / "vibe_spec_core.py").exists())
+        self.assertTrue((scripts / "update_handoff.py").stat().st_mode & 0o111)
 
     def test_json_init_has_stable_result_contract(self) -> None:
         completed = self.run_script(INIT, "--profile", "minimal", "--json")

@@ -18,5 +18,8 @@ jobs:
           python-version: "3.10"
       - name: Compile governance scripts
         run: python -m compileall -q .vibe-spec/scripts
+      - name: Test vibe-spec skill
+        if: ${{ hashFiles('skills/vibe-spec/tests/test_*.py') != '' }}
+        run: python -m unittest discover -s skills/vibe-spec/tests -v
       - name: Check vibe-spec
         run: python .vibe-spec/scripts/check_vibe_spec.py . --strict

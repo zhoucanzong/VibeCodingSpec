@@ -1,0 +1,7 @@
+interface:
+  display_name: "Vibe Spec"
+  short_description: "跨 Agent 的规格、生命周期、交接上下文与生产治理工作流"
+  default_prompt: "使用 $vibe-spec 理解当前项目上下文，并按现有规格继续最合适的下一步。"
+
+policy:
+  allow_implicit_invocation: true

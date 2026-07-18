@@ -105,7 +105,7 @@ def copy_if_missing(src: Path, dst: Path) -> str:
     if dst.exists():
         return f"kept     {dst}"
     dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(src, dst)
+    shutil.copy2(src, dst)
     return f"created  {dst}"
 
 
