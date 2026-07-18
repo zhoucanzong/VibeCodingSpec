@@ -20,7 +20,6 @@ MODULE_FILES = {
         ("MODULES.md", ""),
         ("HANDOFF.md", ""),
         ("ROADMAP.md", ""),
-        ("FEATURE_SPEC.md", "specs/example-feature-spec.md"),
     ],
     "memory": [
         ("DECISIONS.md", ""),

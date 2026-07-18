@@ -1,8 +1,19 @@
+---
+spec_id: short-kebab-title
+verdict: changes
+mode: self
+created: YYYY-MM-DD
+---
+
 # Review 报告
 
 ## 结论
 
-Pass | Pass with Notes | Needs Work | Blocked
+PASS | NEEDS CHANGES | BLOCKED
+
+## 审查方式
+
+subagent | self
 
 ## Spec
 

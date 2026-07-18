@@ -139,21 +139,21 @@ Expected: all Task 3 tests pass.
 - `status_vibe_spec.py TARGET [--json]`.
 - `update_handoff.py TARGET --goal TEXT --state TEXT --next-action TEXT [--active-spec ID] [--blocker TEXT] [--verification TEXT] [--json]`.
 
-- [ ] **Step 1: Write failing workflow tests**
+- [x] **Step 1: Write failing workflow tests**
 
 Cover report creation, spec review-note linkage, sanitized review context, current-state summary, roadmap summary, handoff update and stable JSON fields.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_review_status.py -v`
 
 Expected: failures because workflow scripts do not exist.
 
-- [ ] **Step 3: Implement workflow commands**
+- [x] **Step 3: Implement workflow commands**
 
 Do not include implementer conclusions in review context. Record review mode and report path in the spec. Keep handoff sections concise and replace only owned sections.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_review_status.py -v`
 
