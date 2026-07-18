@@ -11,7 +11,7 @@
 5. `.vibe-spec/LIFECYCLE.md`
 6. `.vibe-spec/MODULES.md`
 7. `.vibe-spec/STYLE_GUIDE.md`
-8. 启用 `memory` 时读 `.vibe-spec/DECISIONS.md` 和 `.vibe-spec/FILE_MAP.md`
+8. 读取 `.vibe-spec/FILE_MAP.md`；启用 `memory` 时再读 `.vibe-spec/DECISIONS.md`
 9. 涉及数据、fixtures、持久化或生成产物时读 `.vibe-spec/DATA_GUIDE.md`
 10. 运行、新增或修改测试前读 `.vibe-spec/TESTING_GUIDE.md`
 11. 做 benchmark、模型、prompt、数据或性能工作时读 `.vibe-spec/EXPERIMENTS.md`

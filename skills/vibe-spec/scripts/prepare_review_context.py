@@ -31,6 +31,16 @@ REVIEW_SECTIONS = (
 )
 
 
+def available_context_path(reports: Path, event_date: str, spec_id: str) -> Path:
+    base = reports / f"{event_date}-{spec_id}-review-context.md"
+    if not base.exists():
+        return base
+    counter = 2
+    while (reports / f"{event_date}-{spec_id}-review-context-{counter}.md").exists():
+        counter += 1
+    return reports / f"{event_date}-{spec_id}-review-context-{counter}.md"
+
+
 def git_diff_stat(target: Path, base: str | None) -> str:
     command = ["git", "-C", str(target), "diff", "--stat"]
     if base:
@@ -44,9 +54,17 @@ def git_diff_stat(target: Path, base: str | None) -> str:
 def prepare_context(target: Path, spec_id: str, base: str | None, output: Path | None) -> Path:
     spec = find_spec(target, spec_id)
     workspace = workspace_path(target)
-    destination = output or workspace / "reports" / f"{today()}-{spec_id}-review-context.md"
-    if not destination.is_absolute():
-        destination = target / destination
+    if output is None:
+        destination = available_context_path(workspace / "reports", today(), spec_id)
+    else:
+        destination = output if output.is_absolute() else target / output
+        destination = destination.resolve()
+        try:
+            destination.relative_to(target)
+        except ValueError as exc:
+            raise SpecError("review context 输出必须位于目标仓库内") from exc
+        if destination.exists():
+            raise SpecError(f"输出文件已存在，拒绝覆盖: {destination}")
     destination.parent.mkdir(parents=True, exist_ok=True)
 
     lines = [

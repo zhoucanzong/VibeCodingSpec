@@ -7,6 +7,7 @@ import json
 import os
 import re
 import tempfile
+import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
@@ -172,6 +173,35 @@ def atomic_write(path: Path, text: str) -> None:
         raise
 
 
+def atomic_write_many(files: dict[Path, str]) -> None:
+    """先预写全部临时文件，再替换目标，避免预检失败造成半更新。"""
+    staged: dict[Path, Path] = {}
+    originals = {path: path.read_text(encoding="utf-8") if path.exists() else None for path in files}
+    try:
+        for path, content in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            descriptor, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                handle.write(content)
+            staged[path] = Path(temp_name)
+        replaced: list[Path] = []
+        try:
+            for path, temporary in staged.items():
+                temporary.replace(path)
+                replaced.append(path)
+        except BaseException:
+            for path in reversed(replaced):
+                original = originals[path]
+                if original is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    atomic_write(path, original)
+            raise
+    finally:
+        for temporary in staged.values():
+            temporary.unlink(missing_ok=True)
+
+
 def load_spec(path: Path) -> SpecDocument:
     metadata, body = parse_frontmatter(path.read_text(encoding="utf-8"))
     return SpecDocument(path=path, metadata=metadata, body=body)
@@ -272,15 +302,19 @@ def next_action(status: str) -> str:
     return mapping.get(status, "检查状态")
 
 
-def rebuild_spec_index(target: Path | str) -> Path:
+def render_spec_index(target: Path | str, upsert: SpecDocument | None = None) -> str:
     workspace = workspace_path(target)
+    specs = all_specs(target)
+    if upsert is not None:
+        specs = [spec for spec in specs if spec.spec_id != upsert.spec_id]
+        specs.append(upsert)
     lines = [
         "# Spec 索引",
         "",
         "| Spec ID | 文件 | 状态 | 父级 | 更新时间 | 下一步 |",
         "|---|---|---|---|---|---|",
     ]
-    for spec in sorted(all_specs(target), key=lambda item: item.spec_id):
+    for spec in sorted(specs, key=lambda item: item.spec_id):
         parent = str(spec.metadata.get("parent", "none"))
         updated = str(spec.metadata.get("updated", "unknown"))
         relative = spec.path.relative_to(workspace)
@@ -293,8 +327,13 @@ def rebuild_spec_index(target: Path | str) -> Path:
             "由 vibe-spec 生命周期脚本维护。手工修改后运行 `check_vibe_spec.py --strict`。",
         ]
     )
+    return "\n".join(lines) + "\n"
+
+
+def rebuild_spec_index(target: Path | str) -> Path:
+    workspace = workspace_path(target)
     index_path = workspace / "SPEC_INDEX.md"
-    atomic_write(index_path, "\n".join(lines) + "\n")
+    atomic_write(index_path, render_spec_index(target))
     return index_path
 
 
@@ -337,16 +376,35 @@ def validate_transition(spec: SpecDocument, new_state: str) -> list[str]:
         findings.append("门禁缺少有效章节 `Implementation Notes`")
     if new_state == "verified":
         verification = section_content(body, "Verification Plan") or ""
-        evidence_pattern = re.compile(
-            r"(?i)(`[^`]+`[^\n]*(pass|passed|通过|exit\s*0|成功)|结果\s*[:：][^\n]*(通过|成功|pass))"
-        )
-        if not meaningful(verification) or not evidence_pattern.search(verification):
+        if not meaningful(verification) or not has_verification_evidence(verification):
             findings.append("门禁缺少通过的验证证据")
     if new_state in {"reviewed", "active"}:
-        review = section_content(body, "Review Notes") or ""
-        if not meaningful(review) or not re.search(r"(?i)(pass|approved|通过|无阻塞)", review):
+        if not review_passes_current_verification(spec):
             findings.append("门禁缺少通过的审核记录")
     return findings
+
+
+def has_verification_evidence(content: str) -> bool:
+    pattern = re.compile(
+        r"(?im)^\s*-\s*(?:Result|结果)\s*[:：]\s*`[^`]+`\s*(?:->|:)\s*(?:PASS|PASSED|通过|成功)\b"
+    )
+    return bool(pattern.search(content))
+
+
+def new_verification_id() -> str:
+    return uuid.uuid4().hex
+
+
+def review_passes_current_verification(spec: SpecDocument) -> bool:
+    verification_id = str(spec.metadata.get("verification_id", ""))
+    if not verification_id:
+        return False
+    notes = section_content(spec.body, "Review Notes") or ""
+    matching = [line.strip() for line in notes.splitlines() if f"verification_id={verification_id}" in line]
+    if not matching:
+        return False
+    latest = matching[-1]
+    return "PASS" in latest and "NEEDS CHANGES" not in latest
 
 
 def today() -> str:

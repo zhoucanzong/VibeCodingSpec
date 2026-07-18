@@ -12,9 +12,12 @@ from vibe_spec_core import (
     CommandResult,
     VALID_STATES,
     emit_result,
+    has_verification_evidence,
     meaningful,
     parse_frontmatter,
+    review_passes_current_verification,
     section_content,
+    SpecDocument,
 )
 
 
@@ -108,17 +111,32 @@ def parse_specs(specs_dir: Path) -> tuple[list[SpecRecord], list[Finding]]:
     return records, findings
 
 
-def index_entries(index_path: Path) -> dict[str, str]:
+def index_entries(index_path: Path) -> dict[str, dict[str, str]]:
     if not index_path.exists():
         return {}
-    result: dict[str, str] = {}
+    result: dict[str, dict[str, str]] = {}
     for line in read_text(index_path).splitlines():
         if not line.startswith("|"):
             continue
         cells = [cell.strip() for cell in line.strip("|").split("|")]
         if len(cells) >= 3 and cells[0] not in {"Spec ID", "---", "project"}:
-            result[cells[0]] = cells[2]
+            result[cells[0]] = {"path": cells[1].strip("`"), "status": cells[2]}
     return result
+
+
+def roadmap_references(roadmap_path: Path) -> set[str]:
+    if not roadmap_path.exists():
+        return set()
+    references: set[str] = set()
+    for line in read_text(roadmap_path).splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip().strip("`") for cell in line.strip("|").split("|")]
+        if len(cells) < 2 or cells[0] in {"项目", "---", "none"}:
+            continue
+        if cells[1] not in {"", "none", "project", "关联 Spec"}:
+            references.add(cells[1])
+    return references
 
 
 def list_value(value: object) -> list[str]:
@@ -154,10 +172,11 @@ def check_spec(record: SpecRecord) -> list[Finding]:
     if record.status in IMPLEMENTED_STATES and not meaningful(section_content(record.text, "Implementation Notes")):
         findings.append(Finding("P1", "missing_implementation_notes", location, "已实现状态缺少有效实现记录。"))
     verification = section_content(record.text, "Verification Plan") or ""
-    if record.status in VERIFIED_STATES and not re.search(r"(?i)(`[^`]+`.*(pass|通过|exit\s*0)|结果\s*[:：].*(pass|通过|成功))", verification):
+    if record.status in VERIFIED_STATES and not has_verification_evidence(verification):
         findings.append(Finding("P1", "missing_verification_evidence", location, "已验证状态缺少通过证据。"))
-    review = section_content(record.text, "Review Notes") or ""
-    if record.status in REVIEWED_STATES and not re.search(r"(?i)(pass|approved|通过|无阻塞)", review):
+    _, body = parse_frontmatter(record.text)
+    document = SpecDocument(record.path, record.metadata, body)
+    if record.status in REVIEWED_STATES and not review_passes_current_verification(document):
         findings.append(Finding("P1", "missing_review_notes", location, "已审核状态缺少通过记录。"))
     if record.status in ACTIVE_LIKE_STATES and "TBD" in record.text:
         findings.append(Finding("P2", "active_has_tbd", location, "active/needs_* spec 仍包含 TBD。"))
@@ -252,15 +271,29 @@ def check_workspace(workspace: Path) -> list[Finding]:
         findings.append(Finding("P1", "orphan_index_entry", "SPEC_INDEX.md", f"索引项 `{spec_id}` 没有对应 spec。"))
     for spec_id in sorted(known_ids & indexed):
         actual_states = {record.status for record in by_id[spec_id]}
-        if index[spec_id] not in actual_states:
+        if index[spec_id]["status"] not in actual_states:
             findings.append(
                 Finding(
                     "P1",
                     "index_status_mismatch",
                     "SPEC_INDEX.md",
-                    f"索引状态 `{index[spec_id]}` 与 spec `{spec_id}` 的状态不一致。",
+                    f"索引状态 `{index[spec_id]['status']}` 与 spec `{spec_id}` 的状态不一致。",
                 )
             )
+        actual_paths = {str(record.path.relative_to(workspace)) for record in by_id[spec_id]}
+        if index[spec_id]["path"] not in actual_paths:
+            findings.append(
+                Finding(
+                    "P1",
+                    "index_path_mismatch",
+                    "SPEC_INDEX.md",
+                    f"索引路径 `{index[spec_id]['path']}` 与 spec `{spec_id}` 的真实路径不一致。",
+                )
+            )
+    for spec_id in sorted(roadmap_references(workspace / "ROADMAP.md") - known_ids):
+        findings.append(
+            Finding("P1", "broken_roadmap_spec", "ROADMAP.md", f"路线图引用的 spec `{spec_id}` 不存在。")
+        )
     findings.extend(check_handoff(workspace))
     return findings
 

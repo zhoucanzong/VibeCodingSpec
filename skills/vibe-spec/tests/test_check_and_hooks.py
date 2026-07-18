@@ -12,7 +12,7 @@ SKILL = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from vibe_spec_core import load_spec, write_spec  # noqa: E402
+from vibe_spec_core import load_spec, today, write_spec  # noqa: E402
 
 
 INIT = SCRIPTS / "init_vibe_spec.py"
@@ -100,6 +100,28 @@ class CheckAndHooksTests(unittest.TestCase):
         self.assertIn("index_status_mismatch", codes)
         self.assertIn("missing_lifecycle_evidence", codes)
 
+    def test_check_detects_index_path_and_roadmap_reference_drift(self) -> None:
+        self.create("login-flow")
+        index = self.root / ".vibe-spec" / "SPEC_INDEX.md"
+        index.write_text(
+            index.read_text(encoding="utf-8").replace(f"specs/{today()}-login-flow.md", "specs/wrong.md"),
+            encoding="utf-8",
+        )
+        roadmap = self.root / ".vibe-spec" / "ROADMAP.md"
+        roadmap.write_text(
+            roadmap.read_text(encoding="utf-8").replace(
+                "| none | none | idea | 暂无已确认计划 |",
+                "| Ghost feature | missing-spec | planned | invalid reference |",
+            ),
+            encoding="utf-8",
+        )
+
+        completed = self.run_script(CHECK, "--strict", "--json", check=False)
+        codes = {finding["code"] for finding in json.loads(completed.stdout)["findings"]}
+
+        self.assertIn("index_path_mismatch", codes)
+        self.assertIn("broken_roadmap_spec", codes)
+
     def test_hook_installer_refuses_unmanaged_hook_without_modifying_it(self) -> None:
         subprocess.run(["git", "init", str(self.root)], check=True, capture_output=True)
         hook = self.root / ".git" / "hooks" / "pre-commit"
@@ -149,6 +171,31 @@ class CheckAndHooksTests(unittest.TestCase):
         self.run_script(HOOKS, "--json")
 
         self.assertEqual(custom.read_text(encoding="utf-8"), "# project-owned check\n")
+
+    def test_hook_installer_uses_common_git_dir_from_linked_worktree(self) -> None:
+        main = self.root / "main"
+        linked = self.root / "linked"
+        main.mkdir()
+        subprocess.run([sys.executable, str(INIT), str(main), "--profile", "minimal"], check=True, capture_output=True)
+        subprocess.run(["git", "init", str(main)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(main), "config", "user.name", "Test"], check=True)
+        subprocess.run(["git", "-C", str(main), "config", "user.email", "test@example.com"], check=True)
+        subprocess.run(["git", "-C", str(main), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(main), "commit", "-m", "fixture"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(main), "worktree", "add", "-b", "linked-test", str(linked)], check=True, capture_output=True)
+
+        completed = subprocess.run(
+            [sys.executable, str(HOOKS), str(linked), "--json"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+
+        self.assertTrue(json.loads(completed.stdout)["ok"])
+        common_hook = main / ".git" / "hooks" / "pre-commit"
+        wrong_hook = main / ".git" / "worktrees" / "linked" / "hooks" / "pre-commit"
+        self.assertIn("managed-by-vibe-spec", common_hook.read_text(encoding="utf-8"))
+        self.assertFalse(wrong_hook.exists())
 
 
 if __name__ == "__main__":

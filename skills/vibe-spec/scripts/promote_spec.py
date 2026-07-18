@@ -9,16 +9,18 @@ from pathlib import Path
 from vibe_spec_core import (
     CommandResult,
     SpecError,
+    atomic_write_many,
     append_lifecycle,
     append_section_line,
     command_error,
     emit_result,
     find_spec,
     next_action,
-    rebuild_spec_index,
+    new_verification_id,
+    render_spec_index,
     today,
     validate_transition,
-    write_spec,
+    workspace_path,
 )
 
 
@@ -40,14 +42,21 @@ def promote(
     spec.metadata["status"] = new_state
     spec.metadata["updated"] = event_date
     spec.metadata["owner_agent"] = actor
+    if new_state == "verified":
+        spec.metadata["verification_id"] = new_verification_id()
     spec.body = append_lifecycle(spec.body, event_date, old_state, new_state, reason, evidence)
     spec.body = append_section_line(
         spec.body,
         "Changelog",
         f"- {event_date}: `{old_state}` -> `{new_state}` ({reason})。",
     )
-    write_spec(spec)
-    rebuild_spec_index(target)
+    index_path = workspace_path(target) / "SPEC_INDEX.md"
+    atomic_write_many(
+        {
+            spec.path: spec.text.rstrip() + "\n",
+            index_path: render_spec_index(target, upsert=spec),
+        }
+    )
     return old_state, new_state, spec.path
 
 

@@ -12,7 +12,7 @@ SKILL = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from vibe_spec_core import load_spec, replace_section, write_spec  # noqa: E402
+from vibe_spec_core import load_spec, replace_section, today, write_spec  # noqa: E402
 
 
 INIT = SCRIPTS / "init_vibe_spec.py"
@@ -94,6 +94,18 @@ class LifecycleTests(unittest.TestCase):
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("已存在", completed.stdout)
 
+    def test_create_refuses_existing_filename_with_different_spec_id(self) -> None:
+        source = self.create("other-flow")
+        collision = self.root / ".vibe-spec" / "specs" / f"{today()}-login-flow.md"
+        user_content = source.read_text(encoding="utf-8")
+        source.unlink()
+        collision.write_text(user_content, encoding="utf-8")
+
+        completed = self.run_script(CREATE, "login-flow", "--title", "Login", "--json", check=False)
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertEqual(collision.read_text(encoding="utf-8"), user_content)
+
     def test_illegal_transition_does_not_modify_spec(self) -> None:
         path = self.create()
         before = path.read_text(encoding="utf-8")
@@ -142,10 +154,51 @@ class LifecycleTests(unittest.TestCase):
         failed = self.promote("login-flow", "verified", check=False)
         self.assertNotEqual(failed.returncode, 0)
         spec = load_spec(path)
-        spec.body = replace_section(spec.body, "Verification Plan", "- `python -m unittest`: PASS, exit 0。")
+        spec.body = replace_section(
+            spec.body,
+            "Verification Plan",
+            "- Result: `python -m unittest` -> PASS (exit 0)。",
+        )
         write_spec(spec)
         self.promote("login-flow", "verified")
         self.assertEqual(load_spec(path).status, "verified")
+
+    def test_future_tense_verification_text_does_not_satisfy_gate(self) -> None:
+        path = self.create()
+        self.make_spec_ready(path)
+        for state in ("ready_for_review", "approved", "in_progress"):
+            self.promote("login-flow", state)
+        spec = load_spec(path)
+        spec.body = replace_section(spec.body, "Implementation Notes", "- 完成实现。")
+        spec.body = replace_section(
+            spec.body,
+            "Verification Plan",
+            "- `python -m unittest` should PASS after implementation。",
+        )
+        write_spec(spec)
+        self.promote("login-flow", "implemented")
+
+        failed = self.promote("login-flow", "verified", check=False)
+
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertEqual(load_spec(path).status, "implemented")
+
+    def test_promotion_does_not_partially_update_when_index_cannot_be_staged(self) -> None:
+        path = self.create()
+        self.make_spec_ready(path)
+        self.promote("login-flow", "ready_for_review")
+        workspace = self.root / ".vibe-spec"
+        before_spec = path.read_text(encoding="utf-8")
+        before_index = (workspace / "SPEC_INDEX.md").read_text(encoding="utf-8")
+        workspace.chmod(0o500)
+        try:
+            failed = self.promote("login-flow", "approved", check=False)
+        finally:
+            workspace.chmod(0o700)
+
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertEqual(path.read_text(encoding="utf-8"), before_spec)
+        self.assertEqual((workspace / "SPEC_INDEX.md").read_text(encoding="utf-8"), before_index)
 
 
 if __name__ == "__main__":

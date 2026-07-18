@@ -38,6 +38,11 @@ def create_review(
     findings: list[str],
 ) -> Path:
     spec = find_spec(target, spec_id)
+    if spec.status != "verified":
+        raise SpecError(f"只有 `verified` spec 可以执行实现 review；当前为 `{spec.status}`")
+    verification_id = str(spec.metadata.get("verification_id", ""))
+    if not verification_id:
+        raise SpecError("verified spec 缺少 verification_id，请重新执行 verified 推进")
     workspace = workspace_path(target)
     reports = workspace / "reports"
     reports.mkdir(parents=True, exist_ok=True)
@@ -51,6 +56,7 @@ def create_review(
             f"spec_id: {spec_id}",
             f"verdict: {verdict}",
             f"mode: {mode}",
+            f"verification_id: {verification_id}",
             f"created: {event_date}",
             "---",
             "",
@@ -85,7 +91,10 @@ def create_review(
     )
     report_path.write_text(report, encoding="utf-8")
     relative_report = report_path.relative_to(target)
-    note = f"- {event_date}: {verdict_label} via `{mode}`; report: `{relative_report}`; {summary}"
+    note = (
+        f"- {event_date}: {verdict_label} via `{mode}`; verification_id={verification_id}; "
+        f"report: `{relative_report}`; {summary}"
+    )
     spec.body = append_section_line(spec.body, "Review Notes", note)
     spec.metadata["updated"] = event_date
     write_spec(spec)

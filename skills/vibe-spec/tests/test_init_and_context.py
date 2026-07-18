@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -35,7 +36,11 @@ class InitAndContextTests(unittest.TestCase):
         workspace = self.root / ".vibe-spec"
         self.assertTrue((workspace / "HANDOFF.md").exists())
         self.assertTrue((workspace / "ROADMAP.md").exists())
+        self.assertTrue((workspace / "FILE_MAP.md").exists())
         self.assertIn("Current Goal", (workspace / "HANDOFF.md").read_text(encoding="utf-8"))
+        handoff = (workspace / "HANDOFF.md").read_text(encoding="utf-8")
+        for relative in re.findall(r"\]\(([^)]+\.md)\)", handoff):
+            self.assertTrue((workspace / relative).exists(), relative)
 
     def test_optional_agent_entries_are_thin_and_existing_files_are_preserved(self) -> None:
         (self.root / "CLAUDE.md").write_text("user rules\n", encoding="utf-8")

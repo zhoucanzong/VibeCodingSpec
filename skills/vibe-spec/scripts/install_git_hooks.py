@@ -19,9 +19,9 @@ def skill_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-def git_dir(target: Path) -> Path:
+def git_common_dir(target: Path) -> Path:
     completed = subprocess.run(
-        ["git", "-C", str(target), "rev-parse", "--git-dir"],
+        ["git", "-C", str(target), "rev-parse", "--git-common-dir"],
         text=True,
         capture_output=True,
         check=False,
@@ -30,6 +30,13 @@ def git_dir(target: Path) -> Path:
         raise SpecError("目标目录不是 Git 仓库")
     path = Path(completed.stdout.strip())
     return path.resolve() if path.is_absolute() else (target / path).resolve()
+
+
+def display_path(path: Path, target: Path) -> str:
+    try:
+        return str(path.relative_to(target))
+    except ValueError:
+        return str(path)
 
 
 def hook_text(strict: bool) -> str:
@@ -46,7 +53,7 @@ def hook_text(strict: bool) -> str:
 
 
 def install_hooks(target: Path, force: bool) -> list[Path]:
-    hooks_dir = git_dir(target) / "hooks"
+    hooks_dir = git_common_dir(target) / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
     destinations = [hooks_dir / "pre-commit", hooks_dir / "pre-push"]
     unmanaged = [
@@ -94,7 +101,7 @@ def main() -> int:
         CommandResult(
             True,
             "hooks",
-            changes=[{"path": str(path.relative_to(target))} for path in hooks],
+            changes=[{"path": display_path(path, target)} for path in hooks],
             next_actions=["提交前运行快速检查，推送前运行严格检查"],
         ),
         args.json,

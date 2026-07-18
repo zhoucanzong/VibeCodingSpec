@@ -56,6 +56,14 @@ scripts/promote_spec.py <repo> login-flow ready_for_review \
 
 `promote_spec.py` 先检查合法路径和内容门禁，失败时不写文件；成功时同步 frontmatter、Lifecycle Log、Changelog 和 `SPEC_INDEX.md`。
 
+推进到 `verified` 前，在 Verification Plan 中写入实际执行结果：
+
+```markdown
+- Result: `python -m unittest` -> PASS (exit 0)
+```
+
+“测试应该 PASS”或“计划记录通过结果”等未来时态不构成证据。成功推进会生成新的 `verification_id`。
+
 - `sync`：从 `active` 推进到 `needs_sync`，核对父规则，更新 spec 后进入 `draft` 并重新审核。
 - `retire`：从 `active` 推进到 `superseded` 或 `deprecated`，完成引用迁移后推进到 `archived`。
 - `update`：从 `active` 推进到 `needs_update`，修改后回到 `draft`。
@@ -71,6 +79,8 @@ scripts/create_review.py <repo> login-flow \
 ```
 
 审查包故意排除 Implementation Notes 和 Review Notes 中的实现者结论。Agent 负责启动 subagent；脚本不能启动或伪装 reviewer。
+
+`create_review.py` 只接受 `verified` spec，并把报告绑定到当前 `verification_id`。重新验证后必须重新 review；同一 verification 的最后 verdict 决定是否可以推进到 `reviewed`。
 
 不支持 subagent 时，按 `references/review-checklist.md` 自审，并使用 `--mode self` 记录限制。
 

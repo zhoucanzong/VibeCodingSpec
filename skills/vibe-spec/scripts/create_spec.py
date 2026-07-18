@@ -9,11 +9,15 @@ from pathlib import Path
 
 from vibe_spec_core import (
     CommandResult,
+    SpecDocument,
     SpecError,
+    atomic_write_many,
     all_specs,
     command_error,
     emit_result,
+    parse_frontmatter,
     rebuild_spec_index,
+    render_spec_index,
     today,
     workspace_path,
 )
@@ -63,9 +67,17 @@ def create_spec(
         .replace("- YYYY-MM-DD: 创建 spec。", f"- {event_date}: 创建 spec。")
     )
     destination = workspace / "specs" / f"{event_date}-{spec_id}.md"
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(rendered, encoding="utf-8")
-    rebuild_spec_index(target)
+    if destination.exists():
+        raise SpecError(f"目标文件已存在，拒绝覆盖: {destination}")
+    metadata, body = parse_frontmatter(rendered)
+    new_spec = SpecDocument(destination, metadata, body)
+    index_path = workspace / "SPEC_INDEX.md"
+    atomic_write_many(
+        {
+            destination: new_spec.text.rstrip() + "\n",
+            index_path: render_spec_index(target, upsert=new_spec),
+        }
+    )
     return destination
 
 

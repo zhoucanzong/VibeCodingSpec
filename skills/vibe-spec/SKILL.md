@@ -52,7 +52,7 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 3. `.vibe-spec/PROJECT_SPEC.md`：产品目标、范围和技术边界。
 4. `.vibe-spec/SPEC_INDEX.md`、活跃 spec：正在进行的规格及依赖。
 5. `.vibe-spec/ROADMAP.md`：now、next、later、done。
-6. `.vibe-spec/STYLE_GUIDE.md`、`.vibe-spec/DECISIONS.md`：长期规范和决策。
+6. `.vibe-spec/STYLE_GUIDE.md`，以及启用 memory 时的 `.vibe-spec/DECISIONS.md`：长期规范和决策。
 7. `.vibe-spec/FILE_MAP.md`：代码层级、入口、目录和关键文件职责。
 8. 与任务相关的 testing、data、security、release、migration、environment、observability 或 contracts guide。
 9. 相关代码、测试和相似实现。
@@ -105,7 +105,7 @@ idea -> draft -> ready_for_review -> approved -> in_progress
 3. 先查找项目已有模式，再做满足验收标准的最小完整实现。
 4. 更新 `Implementation Notes`，列出代码路径、重要选择和偏差。
 5. 同步 `FILE_MAP.md`、测试、数据、实验和相关生产 guide。
-6. 执行 Verification Plan，记录命令、结果和失败项。
+6. 执行 Verification Plan，用 `- Result: \`command\` -> PASS/FAIL (exit code)` 记录实际结果和失败项。
 7. 推进到 `implemented`；只有存在通过证据时推进到 `verified`。
 8. 强制进入 Post-Build Review。
 9. 更新 `HANDOFF.md` 和 `ROADMAP.md`。
@@ -117,7 +117,7 @@ idea -> draft -> ready_for_review -> approved -> in_progress
 1. 使用 `prepare_review_context.py` 生成仅含 spec、diff 摘要、验证目标和相关文件的审查包。
 2. 当前工具支持 subagent 时，启动独立 reviewer；不要传入实现者的 `Implementation Notes` 结论或已有 review 结论。
 3. 当前工具不支持 subagent 时，按 `references/review-checklist.md` 自审，并在报告中标记 `mode: self`。
-4. 使用 `create_review.py` 保存报告并回链 `Review Notes`。
+4. 使用 `create_review.py` 保存报告并回链 `Review Notes`；报告绑定当前 `verification_id`，旧 review 不得复用。
 5. reviewer 判定通过后才允许推进到 `reviewed`；存在阻塞问题时推进到 `needs_changes`。
 
 改动超过 3 个文件，或涉及 auth、payment、security、privacy、migration、external API、P0/P1 drift、`reviewed`/`active` 推进时，要求独立 subagent。当前环境没有 subagent 时，明确记录限制，不得伪造独立审查。

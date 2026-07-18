@@ -20,10 +20,10 @@ MODULE_FILES = {
         ("MODULES.md", ""),
         ("HANDOFF.md", ""),
         ("ROADMAP.md", ""),
+        ("FILE_MAP.md", ""),
     ],
     "memory": [
         ("DECISIONS.md", ""),
-        ("FILE_MAP.md", ""),
     ],
     "testing": [
         ("TESTING_GUIDE.md", ""),
