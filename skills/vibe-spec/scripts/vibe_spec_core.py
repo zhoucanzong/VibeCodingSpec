@@ -337,7 +337,10 @@ def validate_transition(spec: SpecDocument, new_state: str) -> list[str]:
         findings.append("门禁缺少有效章节 `Implementation Notes`")
     if new_state == "verified":
         verification = section_content(body, "Verification Plan") or ""
-        if not meaningful(verification) or not re.search(r"(?i)(pass|passed|通过|exit\s*0|成功)", verification):
+        evidence_pattern = re.compile(
+            r"(?i)(`[^`]+`[^\n]*(pass|passed|通过|exit\s*0|成功)|结果\s*[:：][^\n]*(通过|成功|pass))"
+        )
+        if not meaningful(verification) or not evidence_pattern.search(verification):
             findings.append("门禁缺少通过的验证证据")
     if new_state in {"reviewed", "active"}:
         review = section_content(body, "Review Notes") or ""

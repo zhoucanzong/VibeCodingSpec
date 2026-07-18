@@ -103,21 +103,21 @@ Expected: all Task 2 tests pass.
 - `promote_spec.py TARGET SPEC_ID STATE --reason TEXT [--evidence TEXT] [--json]`.
 - State transitions and gate findings are exposed by `vibe_spec_core.py`.
 
-- [ ] **Step 1: Write failing lifecycle tests**
+- [x] **Step 1: Write failing lifecycle tests**
 
 Cover valid creation, normalized IDs, duplicate rejection, allowed transitions, illegal jumps, content gates, no-write-on-failure and synchronized frontmatter/log/index updates.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_lifecycle.py -v`
 
 Expected: import or command failures because lifecycle scripts do not exist.
 
-- [ ] **Step 3: Implement creation and promotion**
+- [x] **Step 3: Implement creation and promotion**
 
 Validate before writes. Require meaningful specification content before `ready_for_review`/`approved`, implementation notes before `implemented`, verification evidence before `verified`, and review notes before `reviewed`/`active`.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run: `python3 -m unittest skills/vibe-spec/tests/test_lifecycle.py -v`
 
