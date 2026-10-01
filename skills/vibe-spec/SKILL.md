@@ -15,7 +15,7 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 ## 核心约束
 
 - 把仓库和 `.vibe-spec/` 作为唯一长期事实来源，不依赖某个工具的隐藏会话记忆。
-- Markdown 是持久状态；JSON 仅用于命令即时输出。
+- Markdown 保存持久治理状态；JSON 可用于命令输出、原始实验数据和临时运行元数据，不另建重复的治理事实库。
 - 先理解项目和活跃 spec，再修改代码。
 - 不覆盖用户已有规则、代码或 Git hooks；无法安全合并时停止并说明冲突。
 - 没有脚本时按本文和 references 手工完成等价流程。
@@ -39,7 +39,8 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 | `check [--strict]` | 自动健康检查 | 检查结构、索引、引用、证据和交接信息 |
 | `status` | 汇总项目状态 | 汇总 spec、当前工作、阻塞与近期计划 |
 | `lead / team` | 主管接管多 Agent 协作 | 联系指定负责人、握手登记、委派、同步、跟进与验收 |
-| `experiment <主题>` | 记录可复现实验 | 保存输入、环境、命令、指标、结果和影响 |
+| `experiment <主题>` | 管理实验全程 | 计划、独立 run、失败留存、产物证据、结论审阅 |
+| `record / archive` | 保留工作过程 | 追加重要进展、保存交接快照、原位逻辑归档 |
 | `audit` | 检查 drift | 对照 spec、代码、测试、数据和项目记忆 |
 
 自然语言请求映射到最接近的命令。完整脚本参数和手工降级步骤见 `references/automation.md`。
@@ -73,6 +74,12 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 如果 `HANDOFF.md` 指向不存在的 spec、文件或命令，先报告 drift 并修复事实来源。不要默默猜测。
 
 暂停、完成或切换 Agent 前更新 `HANDOFF.md`：记录当前状态、修改范围、最近验证、已知风险、阻塞和唯一明确的下一动作。代码层级变化时更新 `FILE_MAP.md`；未来优先级变化时更新 `ROADMAP.md`。
+
+## 工作留存与实验
+
+记录和归档前读取项目 `RECORDS.md`。当前摘要只呈现最新状态；重要决定、失败、交接和验收追加到任务过程记录，结论/报告保留原版。`update_handoff.py` 更新前自动保存旧交接快照；`record_work.py` 保存独立事件并回链目标文档。文件落盘不等于 Git 已提交，提交仍遵循既有授权。
+
+做实验时读取 `references/experiments.md`：先确定计划和判定标准，每次运行新建 run ID，保留当时计划快照、代码/数据/配置、实际结果和产物。失败、中断和负结果同样留存。运行 completed 与结论 reviewed 分开，结论绑定运行记录摘要及真实审阅材料；主管据此更新 Spec 和计划。归档使用原位标记，稳定 ID 与证据路径不变。
 
 ## Init 决策
 
@@ -157,6 +164,8 @@ idea -> draft -> ready_for_review -> approved -> in_progress
 - drift 审计：`references/spec-drift.md`
 - Claude、Codex、Cursor 适配：`references/agent-compatibility.md`
 - 主管接管、负责人联系、任务委派与回执：`references/collaboration.md`
+- 实验设计、运行记录、产物与结论审阅：`references/experiments.md`
+- 工作文档留存、检查点与归档：项目 `RECORDS.md`（模板 `assets/templates/RECORDS.md`）
 - 数据、实验、测试和生产规范：读取 `.vibe-spec/MODULES.md` 中已启用模块对应模板。
 
 不要默认加载所有 reference，只读取当前命令需要的内容。

@@ -8,6 +8,7 @@ from collections import Counter
 from pathlib import Path
 
 from collaboration_core import inspect_collaboration
+from experiment_core import inspect_experiments
 
 from vibe_spec_core import (
     CommandResult,
@@ -63,6 +64,9 @@ def status_summary(target: Path) -> dict[str, object]:
     if (workspace / "collaboration" / "TEAM.md").exists():
         collaboration, findings = inspect_collaboration(workspace)
         summary["collaboration"] = {**collaboration, "findings": findings}
+    if (workspace / "EXPERIMENTS.md").exists():
+        experiments, findings = inspect_experiments(workspace)
+        summary["experiments"] = {**experiments, "findings": findings}
     return summary
 
 

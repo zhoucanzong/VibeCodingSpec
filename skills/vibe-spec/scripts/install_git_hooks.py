@@ -73,7 +73,7 @@ def install_hooks(target: Path, force: bool) -> list[Path]:
 
     runtime = git_common_dir(target) / "vibe-spec"
     runtime.mkdir(parents=True, exist_ok=True)
-    for name in ("vibe_spec_core.py", "collaboration_core.py", "check_vibe_spec.py"):
+    for name in ("vibe_spec_core.py", "collaboration_core.py", "experiment_core.py", "check_vibe_spec.py"):
         source = skill_root() / "scripts" / name
         shutil.copyfile(source, runtime / name)
 

@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from collaboration_core import inspect_collaboration
+from experiment_core import inspect_experiments
 
 from vibe_spec_core import (
     CommandResult,
@@ -32,6 +33,7 @@ REQUIRED_CORE_FILES = [
     "MODULES.md",
     "HANDOFF.md",
     "ROADMAP.md",
+    "RECORDS.md",
 ]
 
 MODULE_REQUIRED_FILES = {
@@ -218,7 +220,7 @@ def check_handoff(workspace: Path) -> list[Finding]:
     ]
 
 
-def check_workspace(workspace: Path) -> list[Finding]:
+def check_workspace(workspace: Path, verify_artifacts: bool = False) -> list[Finding]:
     if not workspace.exists():
         return [Finding("P0", "missing_workspace", str(workspace), "缺少 .vibe-spec 工作区。")]
     findings: list[Finding] = []
@@ -227,6 +229,9 @@ def check_workspace(workspace: Path) -> list[Finding]:
             findings.append(Finding("P1", "missing_core_file", name, "缺少 core 文件。"))
 
     enabled = parse_enabled_modules(workspace / "MODULES.md")
+    if "experiments" in enabled:
+        _, experiment_findings = inspect_experiments(workspace, verify_artifacts)
+        findings.extend(Finding(**item) for item in experiment_findings)
     if "collaboration" in enabled:
         _, collaboration_findings = inspect_collaboration(workspace)
         findings.extend(Finding(**item) for item in collaboration_findings)
@@ -317,9 +322,10 @@ def main() -> int:
     parser.add_argument("--strict", action="store_true", help="P2 也作为失败。")
     parser.add_argument("--quiet", action="store_true", help="无问题时不输出。")
     parser.add_argument("--json", action="store_true", help="输出稳定 JSON。")
+    parser.add_argument("--verify-artifacts", action="store_true", help="额外重算本地实验产物 SHA256。")
     args = parser.parse_args()
     target = Path(args.target).expanduser().resolve()
-    findings = check_workspace(target / ".vibe-spec")
+    findings = check_workspace(target / ".vibe-spec", args.verify_artifacts)
     failed = should_fail(findings, args.strict)
     result = CommandResult(
         not failed,

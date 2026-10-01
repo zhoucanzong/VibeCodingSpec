@@ -10,7 +10,7 @@
 {"ok": true, "command": "status", "changes": [], "findings": [], "next_actions": []}
 ```
 
-JSON 是即时输出，不持久化第二套项目状态。
+命令 JSON 是即时输出，不持久化第二套治理状态；原始实验数据和临时锁元数据可用 JSON。
 
 ## Init
 
@@ -112,6 +112,22 @@ python3 scripts/check_vibe_spec.py <repo> --strict --json
 主管按 `references/collaboration.md` 及生成的 `collaboration/TEAM.md` 联系成员，使用模板维护 agents/tasks/messages。`status` 增加 collaboration 摘要及 findings；`check --strict` 检查主管、角色、握手回执、规范版本、任务归属、依赖、修改范围和验收回执。读写这些记录不需要常驻服务或厂商 SDK。
 
 脚本只验证记录结构与一致性，消息投递、回执真实性、预算管理和工程验收仍由当前 Agent 通过实际宿主工具处理。没有通信能力时提供接入步骤；没有后台能力时不承诺离线持续管理。
+
+## 工作留存与实验
+
+```bash
+python3 scripts/record_work.py <repo> collaboration/tasks/order-api.md \
+  --actor api-lead --event blocked --summary "测试服务不可用" \
+  --evidence "日志路径及实际错误" --next-action "恢复服务后使用新运行 ID 重试" --json
+python3 scripts/create_experiment.py <repo> EXP-001 --kind plan --title "检索对比" --owner researcher
+python3 scripts/create_experiment.py <repo> EXP-001 --kind run --record-id RUN-001 --owner researcher
+python3 scripts/create_experiment.py <repo> EXP-001 --kind conclusion --record-id CON-001 --owner research-lead
+python3 scripts/check_vibe_spec.py <repo> --strict --verify-artifacts --json
+```
+
+record_work 保存事件与文档 Progress 回链；不改变状态，不伪造执行。handoff 内容变化时自动保存完整旧版；重复同一更新不生成快照。同一文档写入占用即拒绝，核对写入者退出后再重试。
+
+create_experiment 在计划完整前拒绝创建 run；每次 run 冻结计划快照。结论草稿收录当前全部终态 runs，reviewed 需要实际审阅报告绑定结论摘要。具体协议见 `references/experiments.md` 和项目 RECORDS.md。旧项目先 init 补齐新模板，部署运行时与当前版本不同时使用已有 --refresh-runtime 升级流程；刷新已安装 hooks。
 
 ## 错误处理
 

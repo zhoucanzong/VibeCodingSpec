@@ -27,6 +27,8 @@
 - 生成不包含实现者结论的独立审查上下文。
 - 检查索引漂移、重复 ID、断裂引用、缺失证据和交接缺口。
 - 支持稳定 `--json` 输出、GitHub Actions 和显式 Git hooks。
+- 工作过程追加留存，更新交接自动保存旧版快照；任务和实验原位归档，保留稳定链接。
+- 实验按计划、逐次运行、版本化结论记录；保留失败和负结果，检查计划快照、产物及审阅证据。
 - 可选主管模式：联系指定 terminal 负责人，按主线委派、同步规范、跟进和验收；检查握手、任务依赖、修改范围冲突和验收证据。
 
 ## 安装
@@ -81,6 +83,9 @@ Codex 或其他 Agent 可以自然语言调用：
   DECISIONS.md         # 长期产品与技术决策
   SPEC_INDEX.md        # 所有 spec 的状态、依赖和下一步
   ROADMAP.md           # now / next / later / done
+  RECORDS.md           # 工作文档留存、检查点、纠错与归档
+  history/             # 交接快照和不可覆盖的关键事件
+  experiments/         # 可选：每个实验的计划、快照、运行、结论与模板
   LIFECYCLE.md         # 状态机、门禁和维护规则
   MODULES.md           # 已启用治理模块
   specs/               # 功能 spec
@@ -124,6 +129,19 @@ skills/vibe-spec/scripts/install_git_hooks.py /path/to/project
 ```
 
 所有主要命令的 JSON 输出固定包含 `ok`、`command`、`changes`、`findings` 和 `next_actions`。
+
+实验记录示例（每次实际运行都使用新 run ID）：
+
+```bash
+python3 skills/vibe-spec/scripts/init_vibe_spec.py /path/to/project --profile standard --modules experiments
+python3 skills/vibe-spec/scripts/create_experiment.py /path/to/project EXP-001 \
+  --kind plan --title "检索策略对比" --owner researcher
+# Agent 补齐计划后创建运行；执行后填写实际结果与产物
+python3 skills/vibe-spec/scripts/create_experiment.py /path/to/project EXP-001 \
+  --kind run --record-id RUN-001 --owner researcher
+```
+
+文档使用 Markdown，原始指标可用 JSON/CSV。计划在每次运行时保存快照；结论独立版本化，并绑定运行记录与审阅报告。运行成功不代表假设成立，失败、中断和未启动取消都保留真实状态。`check --verify-artifacts` 可额外核验本地产物哈希；外部存储仍需实际访问验证。
 
 ## 开发验证
 

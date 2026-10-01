@@ -21,6 +21,7 @@ MODULE_FILES = {
         ("HANDOFF.md", ""),
         ("ROADMAP.md", ""),
         ("FILE_MAP.md", ""),
+        ("RECORDS.md", ""),
     ],
     "memory": [
         ("DECISIONS.md", ""),
@@ -37,6 +38,10 @@ MODULE_FILES = {
     ],
     "experiments": [
         ("EXPERIMENTS.md", ""),
+        ("EXPERIMENT_PLAN.md", "experiments/templates/plan.md"),
+        ("EXPERIMENT_RUN.md", "experiments/templates/run.md"),
+        ("EXPERIMENT_CONCLUSION.md", "experiments/templates/conclusion.md"),
+        ("EXPERIMENT_REVIEW.md", "experiments/templates/review.md"),
     ],
     "security": [
         ("SECURITY_GUIDE.md", ""),
@@ -236,7 +241,7 @@ def refresh_runtime(workspace: Path, enabled: bool) -> list[str]:
             continue
         if not enabled:
             raise ValueError(
-                "项目脚本与当前 Skill 不同，启用协作前需升级运行时；"
+                "项目脚本与当前 Skill 不同，启用新治理能力前需升级运行时；"
                 "核对本地改动后使用 --refresh-runtime（原脚本备份为 .pre-vibe-spec）"
             )
         backup = destination.with_name(destination.name + ".pre-vibe-spec")
@@ -275,7 +280,7 @@ def init_workspace(target: Path, profile: str, extra_modules: list[str], upgrade
                     and cells[0] not in modules):
                 modules.append(cells[0])
     messages: list[str] = []
-    if "collaboration" in modules or upgrade_runtime:
+    if {"collaboration", "experiments"} & set(modules) or upgrade_runtime:
         messages.extend(refresh_runtime(workspace, upgrade_runtime))
 
     workspace.mkdir(parents=True, exist_ok=True)
@@ -339,7 +344,7 @@ def install_agent_entries(target: Path, agents: list[str]) -> list[str]:
 def install_ci(target: Path) -> list[str]:
     workspace_scripts = target / ".vibe-spec" / "scripts"
     messages = []
-    for name in ("vibe_spec_core.py", "collaboration_core.py", "check_vibe_spec.py"):
+    for name in ("vibe_spec_core.py", "collaboration_core.py", "experiment_core.py", "check_vibe_spec.py"):
         messages.append(copy_if_missing(skill_root() / "scripts" / name, workspace_scripts / name))
     source = skill_root() / "assets" / "templates" / "github-actions-vibe-spec.yml"
     destination = target / ".github" / "workflows" / "vibe-spec.yml"

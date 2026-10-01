@@ -115,6 +115,11 @@ def inspect_collaboration(workspace: Path) -> tuple[dict, list[dict]]:
     dependencies = {}
     for identifier, (data, body, path) in tasks.items():
         state = data.get("status")
+        if data.get("archived", "false") == "true":
+            if state not in {"accepted", "cancelled"}:
+                issue("invalid_task_archive", path, "只可归档已验收或取消的任务，文件保持原位")
+            if not present(data.get("archived_at")) or not present(data.get("archive_reason")):
+                issue("incomplete_task_archive", path, "归档需时间与原因")
         if state not in TASK_STATES:
             issue("invalid_task_status", path, "未知任务状态")
         execution = data.get("execution_state", "unknown")
@@ -198,5 +203,6 @@ def inspect_collaboration(workspace: Path) -> tuple[dict, list[dict]]:
     summary = {"coordinator": coordinator, "rules_revision": revision,
                "agents": {key: value[0].get("status") for key, value in agents.items()},
                "tasks": dict(Counter(str(value[0].get("status")) for value in tasks.values())),
-               "blocked_tasks": [key for key, value in tasks.items() if value[0].get("status") == "blocked"]}
+               "blocked_tasks": [key for key, value in tasks.items() if value[0].get("status") == "blocked"],
+               "archived_tasks": [key for key, value in tasks.items() if value[0].get("archived") == "true"]}
     return summary, findings

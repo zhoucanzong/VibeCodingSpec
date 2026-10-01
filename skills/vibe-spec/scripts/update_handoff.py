@@ -13,8 +13,10 @@ from vibe_spec_core import (
     emit_result,
     find_spec,
     replace_section,
+    section_content,
     workspace_path,
 )
+from work_records import history_path, read_record, record_lock, resolve_record, write_record_with_history
 
 
 def update_handoff(
@@ -28,14 +30,15 @@ def update_handoff(
     risks: list[str],
 ) -> Path:
     workspace = workspace_path(target)
-    handoff = workspace / "HANDOFF.md"
-    if not handoff.exists():
+    if workspace.is_symlink():
+        raise SpecError(".vibe-spec must not be a symlink")
+    if not (workspace / "HANDOFF.md").exists():
         raise SpecError("缺少 HANDOFF.md，请先运行 init")
+    handoff = resolve_record(workspace, "HANDOFF.md")
     for spec_id in active_specs:
         if spec_id != "project":
             find_spec(target, spec_id)
 
-    text = handoff.read_text(encoding="utf-8")
     sections = {
         "Current Goal": goal,
         "Active Specs": "\n".join(f"- {item}" for item in active_specs) if active_specs else "- none",
@@ -45,9 +48,17 @@ def update_handoff(
         "Worktree Risks": "\n".join(f"- {item}" for item in risks) if risks else "- none",
         "Next Action": next_action,
     }
-    for heading, content in sections.items():
-        text = replace_section(text, heading, content)
-    handoff.write_text(text, encoding="utf-8")
+    with record_lock(workspace, handoff):
+        if not handoff.is_file():
+            raise SpecError("缺少 HANDOFF.md，请先运行 init")
+        original = read_record(handoff)
+        text = original
+        for heading, content in sections.items():
+            if section_content(text, heading) != content.strip():
+                text = replace_section(text, heading, content)
+        if text != original:
+            history = history_path(workspace, "handoffs")
+            write_record_with_history(workspace, handoff, text, history, original)
     return handoff
 
 
@@ -75,7 +86,7 @@ def main() -> int:
             args.verification,
             args.risk,
         )
-    except (OSError, SpecError) as exc:
+    except (OSError, SpecError, UnicodeError) as exc:
         return command_error("handoff", str(exc), args.json)
     emit_result(
         CommandResult(
