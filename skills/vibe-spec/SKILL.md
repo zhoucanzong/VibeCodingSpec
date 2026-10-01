@@ -1,6 +1,6 @@
 ---
 name: vibe-spec
-description: Use when 跨 Agent 或跨工具维护 coding 项目，需要初始化项目规范、理解代码层级、记录当前工作和未来计划、编写或继承 spec、按生命周期实现与审核、检查 spec/code drift，或让 Claude、Codex、Cursor 等工具持续接手同一仓库。
+description: Use when 跨 Agent 或跨工具维护 coding 项目，需要项目规范、代码地图、交接、Spec 生命周期与审核，或由主管协调多个 terminal 的负责人、委派任务并验收成果。
 metadata:
   argument-hint: <需求> 或 init [profile] 或 context 或 handoff 或 roadmap 或 spec <需求> 或 build/review/promote/check/status <spec-id>
 allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFetch]
@@ -38,10 +38,23 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 | `retire <spec-id>` | 替代或废弃规格 | 推进到 `superseded`/`deprecated`，最后归档 |
 | `check [--strict]` | 自动健康检查 | 检查结构、索引、引用、证据和交接信息 |
 | `status` | 汇总项目状态 | 汇总 spec、当前工作、阻塞与近期计划 |
+| `lead / team` | 主管接管多 Agent 协作 | 联系指定负责人、握手登记、委派、同步、跟进与验收 |
 | `experiment <主题>` | 记录可复现实验 | 保存输入、环境、命令、指标、结果和影响 |
 | `audit` | 检查 drift | 对照 spec、代码、测试、数据和项目记忆 |
 
 自然语言请求映射到最接近的命令。完整脚本参数和手工降级步骤见 `references/automation.md`。
+
+## 主管接管模式
+
+用户说“你做主管，这几个 terminal 是负责人，剩下你管理”时，立即进入 `lead`，读取 `references/collaboration.md`。这类请求已授权在指定项目和指定成员之间进行必要的联系、任务委派、回报与协调，无需逐条重复请求许可；仍遵守当前工具的实际权限边界。
+
+- 主管 (`coordinator`，类似 P8) 负责全局目标、规范版本、依赖、集成与汇总；负责人 (`lead`，类似 P7) 持续负责主线；专项成员 (`worker`，类似 P6) 完成限定任务。层级是职责比喻，允许按规模合并。
+- 接受自然语言名单：名字、品牌、terminal 标识、会话 ID/链接、目录中任一可定位线索。使用可用的只读发现能力补齐，仅对无法唯一定位的成员询问必要信息。
+- 显式启用 `collaboration` 模块，核对主管和每个成员的真实通信通道，发送有回邮地址的握手，收到匹配回执后才能登记为 `connected`。
+- 基于现有目标和 Spec 开始管理：给出短分工概览后直接联系与执行，不把日常拆分、催办、同步和验收退回用户处理。
+- 主线分别维护自己的任务和进展；主管维护全局 `HANDOFF.md`、`ROADMAP.md` 及团队汇总。用户可以直接指导任意负责人，影响其他主线的变化须同步。
+- 支持持续管理到本次目标完成；跨轮次重新读取协作记录。需要在当前会话结束后继续运行时，只有宿主存在且获准使用调度/后台能力才能安排；文件消息本身不会唤醒 Agent。
+- 当前没有可用通信能力时，记录未连接成员和一次性接入步骤，推进其余可开展工作，不把写入消息文件说成已联系。
 
 ## 固定接手协议
 
@@ -76,6 +89,7 @@ allowed-tools: [Read, Write, Edit, MultiEdit, Bash, Grep, Glob, WebSearch, WebFe
 - `CLAUDE.md`、`AGENTS.md`、Cursor rule 等薄入口；它们只指向 `.vibe-spec/HANDOFF.md` 和 `AGENT_GUIDE.md`。
 - GitHub Actions；仅显式选择时生成。
 - Git hooks；仅显式选择时安装，已有非 vibe-spec hook 默认拒绝覆盖。
+- 多 terminal 协作：用户要求主管接管即启用 `collaboration`；各 profile 默认保持关闭。
 
 初始化后由 Agent 从仓库补齐项目摘要、代码入口、测试入口、当前工作和下一步。无法确认的信息写 `unknown` 并向用户确认，不编造。
 
@@ -142,6 +156,7 @@ idea -> draft -> ready_for_review -> approved -> in_progress
 - review 验收方法：`references/review-checklist.md`
 - drift 审计：`references/spec-drift.md`
 - Claude、Codex、Cursor 适配：`references/agent-compatibility.md`
+- 主管接管、负责人联系、任务委派与回执：`references/collaboration.md`
 - 数据、实验、测试和生产规范：读取 `.vibe-spec/MODULES.md` 中已启用模块对应模板。
 
 不要默认加载所有 reference，只读取当前命令需要的内容。

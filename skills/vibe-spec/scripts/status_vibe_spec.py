@@ -7,6 +7,8 @@ import argparse
 from collections import Counter
 from pathlib import Path
 
+from collaboration_core import inspect_collaboration
+
 from vibe_spec_core import (
     CommandResult,
     SpecError,
@@ -48,7 +50,7 @@ def status_summary(target: Path) -> dict[str, object]:
     roadmap = roadmap_path.read_text(encoding="utf-8")
     states = Counter(spec.status for spec in all_specs(target))
     blockers = list_items(section_content(handoff, "Blockers"))
-    return {
+    summary = {
         "states": dict(sorted(states.items())),
         "current_goal": (section_content(handoff, "Current Goal") or "unknown").strip(),
         "working_state": (section_content(handoff, "Working State") or "unknown").strip(),
@@ -58,6 +60,10 @@ def status_summary(target: Path) -> dict[str, object]:
         "roadmap_now": roadmap_items(section_content(roadmap, "Now")),
         "roadmap_next": roadmap_items(section_content(roadmap, "Next")),
     }
+    if (workspace / "collaboration" / "TEAM.md").exists():
+        collaboration, findings = inspect_collaboration(workspace)
+        summary["collaboration"] = {**collaboration, "findings": findings}
+    return summary
 
 
 def main() -> int:

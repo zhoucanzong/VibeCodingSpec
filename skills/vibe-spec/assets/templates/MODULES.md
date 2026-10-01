@@ -23,6 +23,7 @@ TBD
 | observability | TBD | 日志、指标、告警和事故观察 | production 默认启用 |
 | contracts | TBD | API/事件/外部集成契约 | production 默认启用 |
 | scripts | TBD | `.vibe-spec/scripts/` 辅助脚本目录 | production 默认启用 |
+| collaboration | no | 主管接管、多 terminal 负责人、委派与验收 | 按需启用 |
 
 ## 维护规则
 

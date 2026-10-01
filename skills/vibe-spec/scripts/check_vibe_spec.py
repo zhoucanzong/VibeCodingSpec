@@ -8,6 +8,8 @@ import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from collaboration_core import inspect_collaboration
+
 from vibe_spec_core import (
     CommandResult,
     VALID_STATES,
@@ -43,6 +45,7 @@ MODULE_REQUIRED_FILES = {
     "environment": ["ENVIRONMENT_GUIDE.md"],
     "observability": ["OBSERVABILITY_GUIDE.md"],
     "contracts": ["CONTRACTS.md"],
+    "collaboration": ["collaboration/TEAM.md"],
 }
 
 IMPLEMENTED_STATES = {"implemented", "verified", "reviewed", "active"}
@@ -224,6 +227,9 @@ def check_workspace(workspace: Path) -> list[Finding]:
             findings.append(Finding("P1", "missing_core_file", name, "缺少 core 文件。"))
 
     enabled = parse_enabled_modules(workspace / "MODULES.md")
+    if "collaboration" in enabled:
+        _, collaboration_findings = inspect_collaboration(workspace)
+        findings.extend(Finding(**item) for item in collaboration_findings)
     if not enabled:
         findings.append(Finding("P2", "unknown_modules", "MODULES.md", "无法识别已启用模块。"))
     for module in enabled:

@@ -7,7 +7,7 @@ import argparse
 import shutil
 from pathlib import Path
 
-from vibe_spec_core import CommandResult, emit_result
+from vibe_spec_core import CommandResult, atomic_write_many, emit_result
 
 
 MODULE_FILES = {
@@ -57,6 +57,12 @@ MODULE_FILES = {
         ("CONTRACTS.md", ""),
     ],
     "scripts": [],
+    "collaboration": [
+        ("COLLABORATION.md", "collaboration/TEAM.md"),
+        ("COLLAB_AGENT.md", "collaboration/templates/agent.md"),
+        ("COLLAB_TASK.md", "collaboration/templates/task.md"),
+        ("COLLAB_MESSAGE.md", "collaboration/templates/message.md"),
+    ],
 }
 
 PROFILES = {
@@ -151,12 +157,22 @@ def update_modules_file(workspace: Path, profile: str, modules: list[str]) -> st
     current = modules_file.read_text(encoding="utf-8")
     can_rewrite = "TBD" in current or "本次初始化启用" in current or "未启用，可后续追加" in current
     if not can_rewrite:
-        with modules_file.open("a", encoding="utf-8") as file:
-            file.write(
-                "\n## 启用记录\n\n"
-                f"- profile: `{profile}`; modules: `{','.join(modules)}`\n"
-            )
-        return f"appended {modules_file}"
+        lines = current.splitlines()
+        found: set[str] = set()
+        for index, line in enumerate(lines):
+            if not line.startswith("|"):
+                continue
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            if len(cells) >= 2 and cells[0] in modules:
+                found.add(cells[0])
+                cells[1] = "yes"
+                lines[index] = "| " + " | ".join(cells) + " |"
+        missing = [module for module in modules if module not in found]
+        if missing:
+            lines.extend(["", "## 追加启用模块", "", "| 模块 | 是否启用 |", "|---|---|"])
+            lines.extend(f"| {module} | yes |" for module in missing)
+        modules_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return f"updated  {modules_file}"
 
     enabled = set(modules)
     lines = [
@@ -187,6 +203,7 @@ def update_modules_file(workspace: Path, profile: str, modules: list[str]) -> st
         "observability": "日志、指标和告警",
         "contracts": "API、事件和外部集成契约",
         "scripts": "`.vibe-spec/scripts/` 辅助脚本目录",
+        "collaboration": "主管、terminal 负责人、委派与验收",
     }
     for module in MODULE_FILES:
         is_enabled = "yes" if module in enabled else "no"
@@ -207,11 +224,59 @@ def update_modules_file(workspace: Path, profile: str, modules: list[str]) -> st
     return f"updated  {modules_file}"
 
 
-def init_workspace(target: Path, profile: str, extra_modules: list[str]) -> list[str]:
+def refresh_runtime(workspace: Path, enabled: bool) -> list[str]:
+    replacements = {}
+    modes = {}
+    original_modes = {}
+    for source in sorted((skill_root() / "scripts").glob("*.py")):
+        destination = workspace / "scripts" / source.name
+        if source.resolve() == destination.resolve() or not destination.exists():
+            continue
+        if source.read_bytes() == destination.read_bytes():
+            continue
+        if not enabled:
+            raise ValueError(
+                "项目脚本与当前 Skill 不同，启用协作前需升级运行时；"
+                "核对本地改动后使用 --refresh-runtime（原脚本备份为 .pre-vibe-spec）"
+            )
+        backup = destination.with_name(destination.name + ".pre-vibe-spec")
+        if backup.exists():
+            raise ValueError(f"备份已存在，先核对并另存旧备份再升级: {backup}")
+        replacements[backup] = destination.read_text(encoding="utf-8")
+        replacements[destination] = source.read_text(encoding="utf-8")
+        modes[backup] = destination.stat().st_mode
+        modes[destination] = source.stat().st_mode
+        original_modes[destination] = destination.stat().st_mode
+    try:
+        atomic_write_many(replacements)
+    except BaseException:
+        # 共享事务恢复内容后，重新创建的文件也需要恢复原执行权限。
+        for path, mode in original_modes.items():
+            if path.exists():
+                path.chmod(mode)
+        raise
+    for path, mode in modes.items():
+        path.chmod(mode)
+    return [f"updated  {path}" for path in replacements]
+
+
+def init_workspace(target: Path, profile: str, extra_modules: list[str], upgrade_runtime: bool = False) -> list[str]:
     templates = skill_root() / "assets" / "templates"
     workspace = target / ".vibe-spec"
     modules = resolve_modules(profile, extra_modules)
+    if upgrade_runtime and "scripts" not in modules:
+        modules.append("scripts")
+    modules_path = workspace / "MODULES.md"
+    if modules_path.exists():
+        for line in modules_path.read_text(encoding="utf-8").splitlines():
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            if (line.startswith("|") and len(cells) >= 2 and cells[0] in MODULE_FILES
+                    and cells[1].lower() in {"yes", "enabled", "true", "启用"}
+                    and cells[0] not in modules):
+                modules.append(cells[0])
     messages: list[str] = []
+    if "collaboration" in modules or upgrade_runtime:
+        messages.extend(refresh_runtime(workspace, upgrade_runtime))
 
     workspace.mkdir(parents=True, exist_ok=True)
     (workspace / "specs").mkdir(parents=True, exist_ok=True)
@@ -226,6 +291,9 @@ def init_workspace(target: Path, profile: str, extra_modules: list[str]) -> list
     if "scripts" in modules:
         (workspace / "scripts").mkdir(parents=True, exist_ok=True)
         messages.append(f"ensured  {workspace / 'scripts'}")
+    if "collaboration" in modules:
+        for name in ("agents", "tasks", "messages"):
+            (workspace / "collaboration" / name).mkdir(parents=True, exist_ok=True)
 
     for module in modules:
         for template_name, relative_target in MODULE_FILES[module]:
@@ -271,7 +339,7 @@ def install_agent_entries(target: Path, agents: list[str]) -> list[str]:
 def install_ci(target: Path) -> list[str]:
     workspace_scripts = target / ".vibe-spec" / "scripts"
     messages = []
-    for name in ("vibe_spec_core.py", "check_vibe_spec.py"):
+    for name in ("vibe_spec_core.py", "collaboration_core.py", "check_vibe_spec.py"):
         messages.append(copy_if_missing(skill_root() / "scripts" / name, workspace_scripts / name))
     source = skill_root() / "assets" / "templates" / "github-actions-vibe-spec.yml"
     destination = target / ".github" / "workflows" / "vibe-spec.yml"
@@ -322,6 +390,7 @@ def main() -> int:
     )
     parser.add_argument("--ci", action="store_true", help="安装 GitHub Actions 检查模板。")
     parser.add_argument("--json", action="store_true", help="输出稳定 JSON 结果。")
+    parser.add_argument("--refresh-runtime", action="store_true", help="备份并升级已有项目脚本；拒绝覆盖已有备份。")
     args = parser.parse_args()
 
     if args.list_profiles:
@@ -335,7 +404,7 @@ def main() -> int:
         parser.error(f"target is not a directory: {target}")
 
     try:
-        messages = init_workspace(target, args.profile, args.modules)
+        messages = init_workspace(target, args.profile, args.modules, args.refresh_runtime)
     except ValueError as exc:
         parser.error(str(exc))
 

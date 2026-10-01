@@ -27,6 +27,7 @@
 - 生成不包含实现者结论的独立审查上下文。
 - 检查索引漂移、重复 ID、断裂引用、缺失证据和交接缺口。
 - 支持稳定 `--json` 输出、GitHub Actions 和显式 Git hooks。
+- 可选主管模式：联系指定 terminal 负责人，按主线委派、同步规范、跟进和验收；检查握手、任务依赖、修改范围冲突和验收证据。
 
 ## 安装
 
@@ -63,7 +64,10 @@ Codex 或其他 Agent 可以自然语言调用：
 使用 vibe-spec 接手这个项目，告诉我正在进行的工作和下一步。
 使用 vibe-spec 为 passwordless login 创建并维护一个 spec。
 使用 vibe-spec 按已批准的 spec 实现，完成后进行独立审核。
+使用 vibe-spec，你做主管。目标是完成订单模块；terminal A 的 Claude 负责后端，目录为……；terminal B 的 Codex 负责前端，任务链接为……。联系他们，剩下你管理。
 ```
+
+主管会根据已有目标和负责人名单启用 `collaboration`，发现可用通道并握手，随后管理主线负责人及专项 Agent（可类比 P8/P7/P6）。用户可直接指导任意负责人。只有无法唯一定位、无法连接或超出授权的关键决定才需要用户补充；主管日常自主拆分、协调和验收。通信由当前宿主工具执行，支持共享信箱兜底；没有可用通道时提供一次性接入消息，不能假称已连接。会话结束后的持续管理需要实际可用的调度能力。
 
 ## 目标项目结构
 
@@ -82,6 +86,7 @@ Codex 或其他 Agent 可以自然语言调用：
   specs/               # 功能 spec
   reports/             # review、audit 和 review context
   scripts/             # 可选项目本地治理脚本
+  collaboration/       # 可选：TEAM.md、agents/、tasks/、messages/、templates/
   *_GUIDE.md           # 按模块启用的 testing/data/production 规范
 ```
 

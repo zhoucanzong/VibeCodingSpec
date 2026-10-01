@@ -1,5 +1,7 @@
 # 跨 Agent 兼容
 
+多 terminal 同时协作时读取 `collaboration.md`，按当前宿主实际能力建立连接。会话续接、消息投递和任务委派是不同操作；收到匹配握手回执后才登记 connected。
+
 当同一项目可能被 Claude、Codex、Cursor 或 IDE Agent 维护时，使用这些规则。
 
 ## 可移植指令

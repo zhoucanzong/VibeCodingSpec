@@ -97,6 +97,22 @@ scripts/install_git_hooks.py <repo> --json
 - hook 安装器把最小运行时放入 Git common dir；所有 linked worktree 共用 `pre-commit` 快速检查和 `pre-push` 严格检查。
 - 已有非 vibe-spec hook 时拒绝覆盖。只有用户明确要求才使用 `--force`；原 hook 备份为 `.pre-vibe-spec`。
 
+## Collaboration
+
+```bash
+python3 scripts/init_vibe_spec.py <repo> --profile standard --modules collaboration
+python3 scripts/status_vibe_spec.py <repo> --json
+python3 scripts/check_vibe_spec.py <repo> --strict --json
+```
+
+已有项目使用其当前 profile，追加模块保留之前启用的模块与记录。所有 profile 默认关闭 collaboration，用户要求主管接管时启用。TEAM.md 初次生成后的 unknown 会被严格检查标为待补齐。
+
+旧部署脚本与当前 Skill 不同时，启用协作会提前报错。核对定制后加 `--refresh-runtime` 备份并升级，已有 `.pre-vibe-spec` 备份不会被覆盖；若已安装 hooks，按原安装授权重新运行安装器更新其 common-dir 运行时。
+
+主管按 `references/collaboration.md` 及生成的 `collaboration/TEAM.md` 联系成员，使用模板维护 agents/tasks/messages。`status` 增加 collaboration 摘要及 findings；`check --strict` 检查主管、角色、握手回执、规范版本、任务归属、依赖、修改范围和验收回执。读写这些记录不需要常驻服务或厂商 SDK。
+
+脚本只验证记录结构与一致性，消息投递、回执真实性、预算管理和工程验收仍由当前 Agent 通过实际宿主工具处理。没有通信能力时提供接入步骤；没有后台能力时不承诺离线持续管理。
+
 ## 错误处理
 
 - 先读 `findings`，再按 `next_actions` 修复。
